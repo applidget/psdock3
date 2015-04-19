@@ -21,4 +21,6 @@ clean:
 	rm -rf ./psdock ./release ./vendor/pkg
 
 vendor:
+	mkdir -p ./vendor/src/github.com/robinmonjo
+	ln -s `pwd` ./vendor/src/github.com/robinmonjo/
 	sh vendor.sh

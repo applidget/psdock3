@@ -40,8 +40,8 @@ func loadConfig(uid, rootfs string) *configs.Config {
 			AllowAllDevices: false,
 			AllowedDevices:  configs.DefaultAllowedDevices,
 		},
-
-		Devices: configs.DefaultAutoCreatedDevices,
+		Hostname: "psdock",
+		Devices:  configs.DefaultAutoCreatedDevices,
 		Mounts: []*configs.Mount{
 			{
 				Source:      "proc",

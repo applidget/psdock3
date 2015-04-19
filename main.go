@@ -12,13 +12,16 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/libcontainer"
 	"github.com/docker/libcontainer/utils"
+
+	_ "github.com/robinmonjo/psdock/fsdriver"
 )
 
 const (
-	//versions
 	version             = "0.1"
 	libcontainerVersion = "b6cf7a6c8520fd21e75f8b3becec6dc355d844b0"
 )
+
+var standardEnv = []string{"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "HOSTNAME=nsinit", "TERM=xterm"}
 
 func main() {
 	app := cli.NewApp()
@@ -29,7 +32,6 @@ func main() {
 	app.Usage = "simple container engine specialized in PaaS"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{Name: "image, i", Usage: "container image"},
-		cli.StringFlag{Name: "uid", Usage: "container unique id"},
 	}
 	app.Commands = []cli.Command{
 		cli.Command{
@@ -67,6 +69,7 @@ func initAction(c *cli.Context) {
 
 func start(c *cli.Context) (int, error) {
 
+	//1: FSDriver mount
 	//mount image with overlayfs and use it as rootfs + defer umount
 	rootfs := c.GlobalString("image") //for now running in image directly
 
@@ -76,23 +79,46 @@ func start(c *cli.Context) (int, error) {
 		return 1, err
 	}
 
-	uid := c.GlobalString("uid")
-	container, err := factory.Create(uid, loadConfig(uid, rootfs))
+	uid, err := utils.GenerateRandomName("psdock_", 7)
+	if err != nil {
+		return 1, err
+	}
+	config := loadConfig(uid, rootfs)
+	container, err := factory.Create(uid, config)
 	if err != nil {
 		return 1, err
 	}
 	defer container.Destroy()
 	process := &libcontainer.Process{
-		Args:   []string{"bash"},
-		Env:    []string{"PATH=/usr/local/bin:/bin"},
-		User:   "root",
-		Stdin:  os.Stdin,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
+		Args: c.Args(),
+		Env:  append(standardEnv, []string{}...),
+		User: "root",
+		//not setting stdin, stdout and stderr, we use a tty by default
 	}
 
-	//launc every co-process
-	go handleSignals(process)
+	//setup tty
+	rootuid, err := config.HostUID()
+	if err != nil {
+		return 1, err
+	}
+	tty, err := newTty(process, rootuid)
+	if err != nil {
+		return 1, err
+	}
+
+	//is stdout is specified, open a connection and attach it
+	input := os.Stdin
+	output := os.Stdout
+
+	if err := tty.attach(process, input, output, output); err != nil {
+		return 1, err
+	}
+	defer tty.Close()
+
+	go handleSignals(process, tty)
+
+	//launch go process
+	//from here os.Stdout, os.Stderr and os.Stdin are interesting and we can copy them to our files
 
 	if err := container.Start(process); err != nil {
 		return 1, err
@@ -108,14 +134,16 @@ func start(c *cli.Context) (int, error) {
 }
 
 //co processes
-func handleSignals(container *libcontainer.Process) {
+func handleSignals(container *libcontainer.Process, tty *tty) {
 	sigc := make(chan os.Signal, 10)
 	signal.Notify(sigc)
+	tty.resize()
 	for sig := range sigc {
-		container.Signal(sig)
+		switch sig {
+		case syscall.SIGWINCH:
+			tty.resize()
+		default:
+			container.Signal(sig)
+		}
 	}
-}
-
-func listenSocketBinding(port string) {
-
 }
