@@ -33,11 +33,18 @@ func (t *tty) Close() error {
 	return nil
 }
 
-func (t *tty) attach(p *libcontainer.Process, stdin io.Reader, stdout, stderr io.Writer) error {
-	go io.Copy(t.console, stdin)
+func (t *tty) attach(stdin io.Reader, stdout, stderr io.Writer) error {
+	if stdin != nil { //stdin might be nil if stdio is a file
+		go io.Copy(t.console, stdin)
+	}
 	go io.Copy(stdout, t.console)
 	go io.Copy(stderr, t.console)
-	state, err := term.SetRawTerminal(os.Stdin.Fd())
+
+	if stdin == nil {
+		return nil
+	}
+
+	state, err := term.SetRawTerminal(t.console.Fd())
 	if err != nil {
 		return err
 	}

@@ -14,6 +14,7 @@ import (
 	"github.com/docker/libcontainer/utils"
 
 	_ "github.com/robinmonjo/psdock/fsdriver"
+	"github.com/robinmonjo/psdock/stream"
 )
 
 const (
@@ -32,6 +33,7 @@ func main() {
 	app.Usage = "simple container engine specialized in PaaS"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{Name: "image, i", Usage: "container image"},
+		cli.StringFlag{Name: "stdio", Usage: "standard input/output connection, if not specified, will use os stdin and stdout"},
 	}
 	app.Commands = []cli.Command{
 		cli.Command{
@@ -107,10 +109,13 @@ func start(c *cli.Context) (int, error) {
 	}
 
 	//is stdout is specified, open a connection and attach it
-	input := os.Stdin
-	output := os.Stdout
+	s, err := stream.NewStream(c.GlobalString("stdio"))
+	if err != nil {
+		return 1, err
+	}
+	defer s.Close()
 
-	if err := tty.attach(process, input, output, output); err != nil {
+	if err := tty.attach(s.Input, s.Output, s.Output); err != nil {
 		return 1, err
 	}
 	defer tty.Close()
