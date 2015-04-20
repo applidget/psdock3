@@ -123,7 +123,6 @@ func start(c *cli.Context) (int, error) {
 	go handleSignals(process, tty)
 
 	//launch go process
-	//from here os.Stdout, os.Stderr and os.Stdin are interesting and we can copy them to our files
 
 	if err := container.Start(process); err != nil {
 		return 1, err
