@@ -7,9 +7,12 @@ HARDWARE=$(shell uname -m)
 build: vendor
 	GOPATH=$(GOPATH) go build
 
-test:
+integration-test:
 	GOPATH=$(GOPATH) go build
 	sudo PATH=$(PATH):`pwd` GOPATH=$(GOPATH) $(GO) test
+
+test:
+	cd stream && GOPATH=$(GOPATH) go test
 
 release:
 	mkdir -p release

@@ -8,6 +8,7 @@ import (
 
 	"github.com/docker/docker/pkg/term"
 	"github.com/docker/libcontainer"
+	"github.com/robinmonjo/psdock/stream"
 )
 
 type tty struct {
@@ -33,14 +34,14 @@ func (t *tty) Close() error {
 	return nil
 }
 
-func (t *tty) attach(stdin io.Reader, stdout, stderr io.Writer) error {
-	if stdin != nil { //stdin might be nil if stdio is a file
-		go io.Copy(t.console, stdin)
+func (t *tty) attach(s *stream.Stream) error {
+	if s.Input != nil { //stdin might be nil if stdio is a file
+		go io.Copy(t.console, s)
 	}
-	go io.Copy(stdout, t.console)
-	go io.Copy(stderr, t.console)
+	go io.Copy(s, t.console)
+	go io.Copy(s, t.console)
 
-	if stdin == nil {
+	if s.Input == nil {
 		return nil
 	}
 

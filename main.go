@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"syscall"
 
 	log "github.com/Sirupsen/logrus"
@@ -34,6 +35,7 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{Name: "image, i", Usage: "container image"},
 		cli.StringFlag{Name: "stdio", Usage: "standard input/output connection, if not specified, will use os stdin and stdout"},
+		cli.StringFlag{Name: "prefix", Usage: "add a prefix to container output lines (format: <prefix>:<color>)"},
 	}
 	app.Commands = []cli.Command{
 		cli.Command{
@@ -75,6 +77,9 @@ func start(c *cli.Context) (int, error) {
 	//mount image with overlayfs and use it as rootfs + defer umount
 	rootfs := c.GlobalString("image") //for now running in image directly
 
+	//1.1: package the app into the rootfs (bindmount ? cp ? possibility to have multi packer)
+
+	//2: Configure the container and its process
 	bin, _ := filepath.Abs(os.Args[0])
 	factory, err := libcontainer.New(rootfs, libcontainer.InitArgs(bin, "init"))
 	if err != nil {
@@ -98,7 +103,7 @@ func start(c *cli.Context) (int, error) {
 		//not setting stdin, stdout and stderr, we use a tty by default
 	}
 
-	//setup tty
+	//3: setup tty and and std{in, out, err} redirection
 	rootuid, err := config.HostUID()
 	if err != nil {
 		return 1, err
@@ -108,36 +113,37 @@ func start(c *cli.Context) (int, error) {
 		return 1, err
 	}
 
-	//is stdout is specified, open a connection and attach it
-	s, err := stream.NewStream(c.GlobalString("stdio"))
+	pref, prefColor := parsePrefixArg(c.GlobalString("prefix"))
+	s, err := stream.NewStream(c.GlobalString("stdio"), pref, prefColor)
 	if err != nil {
 		return 1, err
 	}
 	defer s.Close()
 
-	if err := tty.attach(s.Input, s.Output, s.Output); err != nil {
+	if err := tty.attach(s); err != nil {
 		return 1, err
 	}
 	defer tty.Close()
 
+	//4: forward received signals to container
 	go handleSignals(process, tty)
 
-	//launch go process
+	//5: launch co processes
 
+	//6: start container process
 	if err := container.Start(process); err != nil {
 		return 1, err
 	}
 
-	// wait for the process to finish.
 	status, err := process.Wait()
 	if err != nil {
 		return 1, err
 	}
 
+	//7: container's done
 	return utils.ExitStatus(status.Sys().(syscall.WaitStatus)), nil
 }
 
-//co processes
 func handleSignals(container *libcontainer.Process, tty *tty) {
 	sigc := make(chan os.Signal, 10)
 	signal.Notify(sigc)
@@ -150,4 +156,13 @@ func handleSignals(container *libcontainer.Process, tty *tty) {
 			container.Signal(sig)
 		}
 	}
+}
+
+//helpers
+func parsePrefixArg(prefix string) (string, stream.Color) {
+	comps := strings.Split(prefix, ":")
+	if len(comps) == 1 {
+		return comps[0], stream.NoColor
+	}
+	return comps[0], stream.MapColor(comps[len(comps)-1])
 }

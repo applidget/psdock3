@@ -10,7 +10,8 @@ psdock -i image SOME_UID -h hostname command_to_run
 
 ROADMAP
 
-- stdout prefix and prefix color
+- tests, tests, tests
+- stdout prefix and prefix color --> done
 - log rotation
 - check to get dns working inside the container
 - set process user
@@ -18,5 +19,6 @@ ROADMAP
 - bind port option
 - mount rootfs
 - package app that conforms to heroku built app (copy in /app, source what needed and launch the app)
+- possibility to enter a given container ?
 
 --> release and deploy and hourray !
