@@ -15,6 +15,7 @@ import (
 	"github.com/docker/libcontainer/utils"
 
 	_ "github.com/robinmonjo/psdock/coprocs"
+
 	_ "github.com/robinmonjo/psdock/fsdriver"
 	"github.com/robinmonjo/psdock/stream"
 )

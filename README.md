@@ -23,3 +23,7 @@ ROADMAP
 - libnetwork looks pretty good
 
 --> release and deploy and hourray !
+
+Requirements
+
+if using bindport: pgrep and lsof
