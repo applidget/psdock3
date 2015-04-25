@@ -3,7 +3,6 @@ package stream
 import (
 	"fmt"
 	"io/ioutil"
-	"net"
 	"os"
 	"testing"
 )
@@ -22,7 +21,7 @@ func Test_tcpStream(t *testing.T) {
 
 func Test_fileStream(t *testing.T) {
 	fmt.Printf("File stream ... ")
-	s, err := NewStream("file:///tmp/psdock_test.log")
+	s, err := NewStream("file:///tmp/psdock_test.log", "", NoColor)
 	if err != nil {
 		t.Fatal(err)
 	}

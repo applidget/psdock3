@@ -12,7 +12,8 @@ integration-test:
 	sudo PATH=$(PATH):`pwd` GOPATH=$(GOPATH) $(GO) test
 
 test:
-	cd stream && GOPATH=$(GOPATH) go test
+	GOPATH=$(GOPATH) bash -c 'cd coprocs && go test'
+	GOPATH=$(GOPATH) bash -c 'cd stream && go test'
 
 release:
 	mkdir -p release

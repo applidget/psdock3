@@ -20,5 +20,6 @@ ROADMAP
 - mount rootfs
 - package app that conforms to heroku built app (copy in /app, source what needed and launch the app)
 - possibility to enter a given container ?
+- libnetwork looks pretty good
 
 --> release and deploy and hourray !
