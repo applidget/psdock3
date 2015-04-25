@@ -113,6 +113,10 @@ func (s *Stream) Close() {
 	}
 }
 
+func (s *Stream) InpudFd() {
+
+}
+
 func MapColor(c string) Color {
 	switch c {
 	case "red":

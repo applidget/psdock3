@@ -35,9 +35,7 @@ func (t *tty) Close() error {
 }
 
 func (t *tty) attach(s *stream.Stream) error {
-	if s.Input != nil { //stdin might be nil if stdio is a file
-		go io.Copy(t.console, s)
-	}
+
 	go io.Copy(s, t.console)
 	go io.Copy(s, t.console)
 
@@ -45,11 +43,16 @@ func (t *tty) attach(s *stream.Stream) error {
 		return nil
 	}
 
-	state, err := term.SetRawTerminal(t.console.Fd())
-	if err != nil {
-		return err
+	go io.Copy(t.console, s.Input)
+
+	if s.Input == os.Stdin {
+		state, err := term.SetRawTerminal(os.Stdin.Fd())
+		if err != nil {
+			return err
+		}
+		t.state = state
 	}
-	t.state = state
+
 	return nil
 }
 

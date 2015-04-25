@@ -13,7 +13,7 @@ var (
 )
 
 func Watch(pid, port string) (string, error) {
-	//wait until port is binded by pid or one of its children and when done, call callback
+	//wait until port is binded by pid or one of its children
 	binderPid, err := portBinder(port)
 	if err != nil {
 		return "", err

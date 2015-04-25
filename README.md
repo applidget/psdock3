@@ -12,12 +12,12 @@ ROADMAP
 
 - tests, tests, tests
 - stdout prefix and prefix color --> done
-- log rotation
-- check to get dns working inside the container
-- set process user
-- notifier co-process
-- bind port option
+- log rotation --> done
+- set process user --> done
+- notifier --> (done) a testé integration test ?
+- bind port option --> done
 - mount rootfs
+- check to get dns working inside the container
 - package app that conforms to heroku built app (copy in /app, source what needed and launch the app)
 - possibility to enter a given container ?
 - libnetwork looks pretty good
@@ -27,3 +27,7 @@ ROADMAP
 Requirements
 
 if using bindport: pgrep and lsof
+
+Info on remote stdin
+
+stty raw -echo
