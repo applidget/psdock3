@@ -16,8 +16,8 @@ ROADMAP
 - set process user --> done
 - notifier --> (done) a testé integration test ?
 - bind port option --> done
-- mount rootfs
-- check to get dns working inside the container
+- mount rootfs --> done
+- check to get dns working inside the container --> done
 - package app that conforms to heroku built app (copy in /app, source what needed and launch the app)
 - possibility to enter a given container ?
 - libnetwork looks pretty good

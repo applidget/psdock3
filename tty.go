@@ -37,7 +37,6 @@ func (t *tty) Close() error {
 func (t *tty) attach(s *stream.Stream) error {
 
 	go io.Copy(s, t.console)
-	go io.Copy(s, t.console)
 
 	if s.Input == nil {
 		return nil

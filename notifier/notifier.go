@@ -1,30 +1,44 @@
-package main
+package notifier
 
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 )
 
-type psStatus string
+type PsStatus string
 
 const (
-	statusStarting psStatus = "starting"
-	statusRunning  psStatus = "running"
-	statusCrashed  psStatus = "crashed"
+	StatusStarting PsStatus = "starting"
+	StatusRunning  PsStatus = "running"
+	StatusCrashed  PsStatus = "crashed"
 )
 
-var webHook string
+var WebHook string
 
-func notifyHook(status psStatus) error {
-	body := []byte(fmt.Sprintf(`{"ps": { "status": "%s" } }`, string(status)))
+type Ps struct {
+	Status PsStatus `json:"status"`
+}
 
-	req, err := http.NewRequest("PUT", webHook, bytes.NewBuffer(body))
+type HookPayload struct {
+	Ps *Ps `json:"ps"`
+}
+
+func NotifyHook(status PsStatus) error {
+	payload := &HookPayload{&Ps{Status: status}}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("PUT", WebHook, bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 
-	u, err := url.Parse(webHook)
+	u, err := url.Parse(WebHook)
 	if err != nil {
 		return err
 	}

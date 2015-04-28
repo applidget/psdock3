@@ -16,9 +16,10 @@ import (
 	"github.com/docker/libcontainer"
 	"github.com/docker/libcontainer/utils"
 
-	_ "github.com/robinmonjo/psdock/coprocs"
+	"github.com/robinmonjo/psdock/coprocs"
 
 	"github.com/robinmonjo/psdock/fsdriver"
+	"github.com/robinmonjo/psdock/notifier"
 	"github.com/robinmonjo/psdock/stream"
 )
 
@@ -28,6 +29,13 @@ const (
 )
 
 var standardEnv = []string{"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "HOSTNAME=nsinit", "TERM=xterm"}
+
+func init() {
+	env := os.Getenv("GO_ENV")
+	if env == "testing" {
+		log.SetLevel(log.DebugLevel)
+	}
+}
 
 func main() {
 	app := cli.NewApp()
@@ -132,17 +140,6 @@ func start(c *cli.Context) (int, error) {
 		Args: c.Args(),
 		Env:  append(standardEnv, []string{}...),
 		User: c.GlobalString("user"),
-		//not setting stdin, stdout and stderr, we use a tty by default
-	}
-
-	// setup tty and and std{in, out, err} redirection + prefix
-	rootuid, err := config.HostUID()
-	if err != nil {
-		return 1, err
-	}
-	tty, err := newTty(process, rootuid)
-	if err != nil {
-		return 1, err
 	}
 
 	pref, prefColor := parsePrefixArg(c.GlobalString("prefix"))
@@ -152,21 +149,44 @@ func start(c *cli.Context) (int, error) {
 	}
 	defer s.Close()
 
-	if err := tty.attach(s); err != nil {
-		return 1, err
+	var tty *tty
+	if !s.Interactive() {
+		//no tty
+		process.Stdin = os.Stdin
+		process.Stdout = os.Stdout
+		process.Stderr = os.Stderr
+	} else {
+		rootuid, err := config.HostUID()
+		if err != nil {
+			return 1, err
+		}
+
+		tty, err = newTty(process, rootuid)
+		if err != nil {
+			return 1, err
+		}
+
+		if err := tty.attach(s); err != nil {
+			return 1, err
+		}
+		defer tty.Close()
 	}
-	defer tty.Close()
 
 	// forward received signals to container process
 	go handleSignals(process, tty)
 
+	// start container process
+	psStatusChanged(c, notifier.StatusStarting)
+
 	// launch co processes
 	if c.GlobalString("bindport") != "" {
 		//must be called inside the namespace ...
+		//need to wait until port is bound to tell the process is running
+
+	} else {
+		psStatusChanged(c, notifier.StatusRunning)
 	}
 
-	// start container process
-	psStatusChanged(c, statusStarting)
 	if err := container.Start(process); err != nil {
 		return 1, err
 	}
@@ -177,18 +197,22 @@ func start(c *cli.Context) (int, error) {
 	}
 
 	// container's done
-	psStatusChanged(c, statusCrashed)
+	psStatusChanged(c, notifier.StatusCrashed)
 	return utils.ExitStatus(status.Sys().(syscall.WaitStatus)), nil
 }
 
 func handleSignals(container *libcontainer.Process, tty *tty) {
 	sigc := make(chan os.Signal, 10)
 	signal.Notify(sigc)
-	tty.resize()
+	if tty != nil {
+		tty.resize()
+	}
 	for sig := range sigc {
 		switch sig {
 		case syscall.SIGWINCH:
-			tty.resize()
+			if tty != nil {
+				tty.resize()
+			}
 		default:
 			container.Signal(sig)
 		}
@@ -204,13 +228,20 @@ func parsePrefixArg(prefix string) (string, stream.Color) {
 	return comps[0], stream.MapColor(comps[len(comps)-1])
 }
 
-func psStatusChanged(c *cli.Context, status psStatus) {
+func psStatusChanged(c *cli.Context, status notifier.PsStatus) {
 	wh := c.GlobalString("webhook")
 	if wh == "" {
 		return
 	}
+	notifier.WebHook = wh
 
-	if err := notifyHook(status); err != nil {
+	if err := notifier.NotifyHook(status); err != nil {
 		log.Error("failed to notify web hook %s: %v", wh, err)
+	}
+}
+
+func watchPort(pid, port string) {
+	if err := coprocs.Watch(pid, port); err != nil {
+		log.Error("failed to watch port binding %v", err)
 	}
 }

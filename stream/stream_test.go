@@ -1,20 +1,57 @@
 package stream
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
+	"sync"
 	"testing"
 )
 
-func Test_tlsStream(t *testing.T) {
-	fmt.Printf("TLS/SSL stream ... ")
+func Test_remoteStream(t *testing.T) {
+	fmt.Printf("Remote TCP stream ... ")
 
-	fmt.Println("done")
-}
+	//create a simple tcp server
+	ln, err := net.Listen("tcp", ":9999")
+	defer ln.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
 
-func Test_tcpStream(t *testing.T) {
-	fmt.Printf("TCP stream ... ")
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		conn, err := ln.Accept()
+
+		message, err := bufio.NewReader(conn).ReadString('\n')
+		if err != nil {
+			t.Fatal(err)
+		}
+		conn.Write([]byte(message))
+		wg.Done()
+	}()
+
+	//create a stream on this server
+	s, err := NewStream("tcp://localhost:9999", "", NoColor)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mess := []byte("foo bar\n")
+	if _, err := s.Write(mess); err != nil {
+		t.Fatal(err)
+	}
+	wg.Wait()
+	received, err := bufio.NewReader(s).ReadString('\n')
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if string(mess) != received {
+		t.Fatal("expected to receive %s, got %s", string(mess), received)
+	}
 
 	fmt.Println("done")
 }

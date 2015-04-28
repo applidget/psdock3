@@ -6,7 +6,10 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"strings"
 	"time"
+
+	"github.com/docker/docker/pkg/term"
 )
 
 const DIAL_TIMEOUT = 5 * time.Second
@@ -25,7 +28,8 @@ const (
 )
 
 type Stream struct {
-	Prefix []byte
+	URL    *url.URL
+	prefix []byte
 	Input  io.Reader
 	Output io.Writer
 }
@@ -36,7 +40,7 @@ func NewStream(uri string, pref string, prefColor Color) (*Stream, error) {
 		return nil, err
 	}
 
-	s := &Stream{}
+	s := &Stream{URL: u}
 
 	path := u.Host + u.Path
 
@@ -74,18 +78,35 @@ func NewStream(uri string, pref string, prefColor Color) (*Stream, error) {
 	}
 
 	if pref != "" {
-		s.Prefix = []byte(escapeCode(prefColor) + pref + " - " + "\x1b[0m")
+		s.prefix = []byte(escapeCode(prefColor) + pref + " - " + "\x1b[0m")
 	}
 
 	return s, nil
 }
 
+//tell whether or not the stream is interactive
+func (s *Stream) Interactive() bool {
+	_, isConnIn := s.Input.(net.Conn)
+	_, isConnOut := s.Output.(net.Conn)
+	if isConnIn && isConnOut {
+		return true //assume connection stream are interactive
+	}
+
+	_, isTerminalIn := term.GetFdInfo(s.Input)
+	_, isTerminalOut := term.GetFdInfo(s.Output)
+	return isTerminalIn && isTerminalOut
+}
+
 func (s *Stream) Write(p []byte) (int, error) {
-	if len(s.Prefix) == 0 {
+	if len(s.prefix) == 0 {
 		return s.Output.Write(p)
 	}
 
-	n, err := s.Output.Write(append(s.Prefix, p...))
+	if strings.Trim(string(p), "\n\t") == "" {
+		return s.Output.Write(p)
+	}
+
+	n, err := s.Output.Write(append(s.prefix, p...))
 
 	//the caller will except the write to be len(p), so if we have a prefix, it will confused it.
 	//That is why we need to check for an ErrShortWrite error and return n = n - len(prefix)
@@ -93,7 +114,7 @@ func (s *Stream) Write(p []byte) (int, error) {
 	if err != nil && err != io.ErrShortWrite {
 		return n, err
 	}
-	return n - len(s.Prefix), err
+	return n - len(s.prefix), err
 }
 
 func (s *Stream) Read(p []byte) (int, error) {
@@ -111,10 +132,6 @@ func (s *Stream) Close() {
 	if wc, ok := s.Output.(io.WriteCloser); ok {
 		wc.Close()
 	}
-}
-
-func (s *Stream) InpudFd() {
-
 }
 
 func MapColor(c string) Color {
