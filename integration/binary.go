@@ -35,5 +35,5 @@ func (b *binary) start(args ...string) error {
 }
 
 func (b *binary) stop() error {
-	return b.ps.Signal(syscall.SIGTERM)
+	return b.ps.Signal(syscall.SIGKILL)
 }

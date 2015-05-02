@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"path"
@@ -10,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -28,7 +28,7 @@ const (
 	libcontainerVersion = "b6cf7a6c8520fd21e75f8b3becec6dc355d844b0"
 )
 
-var standardEnv = []string{"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "HOSTNAME=nsinit", "TERM=xterm"}
+var standardEnv = []string{"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "HOSTNAME=psdock", "TERM=xterm"}
 
 func init() {
 	env := os.Getenv("GO_ENV")
@@ -52,6 +52,8 @@ func main() {
 		cli.StringFlag{Name: "webhook, wh", Usage: "web hook to notify process status"},
 		cli.StringFlag{Name: "binport, bp", Usage: "port the process is expected to bind"},
 		cli.StringFlag{Name: "user, u", Value: "root", Usage: "user inside container"},
+		cli.StringFlag{Name: "cwd", Usage: "set the current working dir"},
+		cli.IntFlag{Name: "kill-timeout", Value: 10, Usage: "time to wait for process gracefull stop before killing it"}
 	}
 	app.Commands = []cli.Command{
 		cli.Command{
@@ -111,11 +113,6 @@ func start(c *cli.Context) (int, error) {
 	}
 	defer overlay.CleanupRootfs()
 
-	// Add google dns for networking
-	if err := ioutil.WriteFile(filepath.Join(rootfs, "etc", "resolv.conf"), []byte("nameserver 8.8.8.8\nnameserver 4.4.4.4"), 0600); err != nil {
-		return 1, err
-	}
-
 	// package the app into the rootfs (bindmount ? cp ? possibility to have multi packer)
 
 	// Configure the container and its process
@@ -140,6 +137,7 @@ func start(c *cli.Context) (int, error) {
 		Args: c.Args(),
 		Env:  append(standardEnv, []string{}...),
 		User: c.GlobalString("user"),
+		Cwd:  c.GlobalString("cwd"),
 	}
 
 	pref, prefColor := parsePrefixArg(c.GlobalString("prefix"))
@@ -153,8 +151,8 @@ func start(c *cli.Context) (int, error) {
 	if !s.Interactive() {
 		//no tty
 		process.Stdin = os.Stdin
-		process.Stdout = os.Stdout
-		process.Stderr = os.Stderr
+		process.Stdout = s
+		process.Stderr = s
 	} else {
 		rootuid, err := config.HostUID()
 		if err != nil {
@@ -169,6 +167,10 @@ func start(c *cli.Context) (int, error) {
 		if err := tty.attach(s); err != nil {
 			return 1, err
 		}
+		tty.resize()
+
+		//at this point os.Stdout might not be usable anymore so logs of logrus wont work
+		// I would bufferise them in a file and before exiting, output them (after tty.Close())
 		defer tty.Close()
 	}
 
@@ -178,14 +180,7 @@ func start(c *cli.Context) (int, error) {
 	// start container process
 	psStatusChanged(c, notifier.StatusStarting)
 
-	// launch co processes
-	if c.GlobalString("bindport") != "" {
-		//must be called inside the namespace ...
-		//need to wait until port is bound to tell the process is running
-
-	} else {
-		psStatusChanged(c, notifier.StatusRunning)
-	}
+	go monitorContainerStartup(container, c)
 
 	if err := container.Start(process); err != nil {
 		return 1, err
@@ -201,12 +196,9 @@ func start(c *cli.Context) (int, error) {
 	return utils.ExitStatus(status.Sys().(syscall.WaitStatus)), nil
 }
 
-func handleSignals(container *libcontainer.Process, tty *tty) {
+func handleSignals(process *libcontainer.Process, tty *tty) {
 	sigc := make(chan os.Signal, 10)
 	signal.Notify(sigc)
-	if tty != nil {
-		tty.resize()
-	}
 	for sig := range sigc {
 		switch sig {
 		case syscall.SIGWINCH:
@@ -214,7 +206,10 @@ func handleSignals(container *libcontainer.Process, tty *tty) {
 				tty.resize()
 			}
 		default:
-			container.Signal(sig)
+			log.Infof("signal received: %s", sig)
+			if err := process.Signal(sig); err != nil { //TODO some ps might catch the sigterm signal themselves
+				log.Errorf("failed to signal: %v", err)
+			}
 		}
 	}
 }
@@ -228,6 +223,40 @@ func parsePrefixArg(prefix string) (string, stream.Color) {
 	return comps[0], stream.MapColor(comps[len(comps)-1])
 }
 
+func monitorContainerStartup(container libcontainer.Container, c *cli.Context) {
+	if c.GlobalString("bindport") == "" {
+		//container process not expecting to bind a port
+		psStatusChanged(c, notifier.StatusRunning)
+		return
+	}
+
+	//container process, expected to bind port, need to wait until we have a PID
+	for {
+		state, err := container.State()
+		if err != nil {
+			if err.(libcontainer.Error).Code() == libcontainer.ContainerNotExists {
+				time.Sleep(100 * time.Millisecond)
+				continue
+			} else {
+				log.Errorf("unable to get back container state: %v", err)
+				return
+			}
+		}
+
+		//state exists
+		if state.InitProcessPid != 0 {
+			if _, err := coprocs.Watch(fmt.Sprintf("%d", state.InitProcessPid), c.GlobalString("bindport")); err != nil {
+				log.Errorf("failed to watch port: %v", err)
+				return
+			}
+			//at this point the process has bound the port
+			psStatusChanged(c, notifier.StatusRunning)
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
 func psStatusChanged(c *cli.Context, status notifier.PsStatus) {
 	wh := c.GlobalString("webhook")
 	if wh == "" {
@@ -237,11 +266,5 @@ func psStatusChanged(c *cli.Context, status notifier.PsStatus) {
 
 	if err := notifier.NotifyHook(status); err != nil {
 		log.Error("failed to notify web hook %s: %v", wh, err)
-	}
-}
-
-func watchPort(pid, port string) {
-	if err := coprocs.Watch(pid, port); err != nil {
-		log.Error("failed to watch port binding %v", err)
 	}
 }

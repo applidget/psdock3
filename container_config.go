@@ -11,7 +11,8 @@ const defaultMountFlags = syscall.MS_NOEXEC | syscall.MS_NOSUID | syscall.MS_NOD
 //if ipAddr == "", will use host network otherwise, will setup the net namespace
 func loadConfig(uid, rootfs string) *configs.Config {
 	var config = &configs.Config{
-		Rootfs: rootfs,
+		Rootfs:            rootfs,
+		ParentDeathSignal: int(syscall.SIGKILL),
 		Capabilities: []string{
 			"CHOWN",
 			"DAC_OVERRIDE",
@@ -42,6 +43,12 @@ func loadConfig(uid, rootfs string) *configs.Config {
 		},
 		Hostname: "psdock",
 		Devices:  configs.DefaultAutoCreatedDevices,
+		MaskPaths: []string{
+			"/proc/kcore",
+		},
+		ReadonlyPaths: []string{
+			"/proc/sys", "/proc/sysrq-trigger", "/proc/irq", "/proc/bus",
+		},
 		Mounts: []*configs.Mount{
 			{
 				Source:      "proc",
@@ -81,6 +88,12 @@ func loadConfig(uid, rootfs string) *configs.Config {
 				Destination: "/sys",
 				Device:      "sysfs",
 				Flags:       defaultMountFlags | syscall.MS_RDONLY,
+			},
+			{
+				Source:      "/etc/resolv.conf",
+				Destination: "/etc/resolv.conf",
+				Device:      "bind",
+				Flags:       syscall.MS_BIND | syscall.MS_REC | syscall.MS_RDONLY,
 			},
 		},
 		Rlimits: []configs.Rlimit{

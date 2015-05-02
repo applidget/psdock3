@@ -1,6 +1,24 @@
 #psdock
 
-API:
+##Notion
+
+##API:
+
+psdock -i /path/to/image -r /path/to/rootfs command_to_run
+
+psdock -i /path/to/image -r /path/to/rootfs -stdio <stdio_value> command_to_run
+
+where <stdio_value> may be:
+* file:///path/to/logfile.log
+* tcp://tcp.remote.com
+* tls://tcp.remote.com:422
+* ...
+
+psdock -i /path/to/image -r /path/to/rootfs -prefix some_prefix:color command_to_run
+
+where color can be
+...
+
 
 psdock -i image SOME_UID -h hostname command_to_run
 
@@ -23,6 +41,11 @@ ROADMAP
 - libnetwork looks pretty good
 
 --> release and deploy and hourray !
+
+A voir
+
+- on peut avoir tout les process dans le conteneur, utiliser ça pour le port watcher ?
+- si on utilise le network de l'host ça va pour le port watcher mais sinon ...
 
 Requirements
 

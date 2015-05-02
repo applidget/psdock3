@@ -42,7 +42,7 @@ func (t *tty) attach(s *stream.Stream) error {
 		return nil
 	}
 
-	go io.Copy(t.console, s.Input)
+	go io.Copy(t.console, s)
 
 	if s.Input == os.Stdin {
 		state, err := term.SetRawTerminal(os.Stdin.Fd())
