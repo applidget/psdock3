@@ -50,10 +50,12 @@ func Test_webhook(t *testing.T) {
 	b := newBinary()
 	err := b.start("-i", imagePath, "-r", "/tmp/test_psdock_roo", "-wh", ts.URL, "ls")
 	if err != nil {
+		fmt.Println(b.debugInfo())
 		t.Fatal(err)
 	}
 
 	if cpt != 3 {
+		fmt.Println(b.debugInfo())
 		t.Fatalf("hook called %d times, should have been called 3 times", cpt)
 	}
 	fmt.Println("done")
@@ -101,26 +103,22 @@ func Test_bindPort(t *testing.T) {
 	go func() {
 		err := b.start("-i", imagePath, "-r", "/tmp/test_psdock_roo", "-wh", ts.URL, "--bp", "9778", "nc", "-l", "9778")
 		if err != nil {
+			fmt.Println(b.debugInfo())
 			t.Fatal(err)
 		}
 	}()
 	wgRunning.Wait()
-	fmt.Println("pid:", b.ps.Pid)
+
 	if err := b.stop(); err != nil {
-		fmt.Println(err)
+		fmt.Println(b.debugInfo())
+		t.Fatal(err)
 	}
 	wgCrashed.Wait()
 
 	if cpt != 3 {
+		fmt.Println(b.debugInfo())
 		t.Fatalf("hook called %d times, should have been called 3 times", cpt)
 	}
 
 	fmt.Println("done")
 }
-
-/*
-func Test_stop(t *testing.T) {
-	beforeTest()
-
-}
-*/
