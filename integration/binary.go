@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -29,11 +30,13 @@ func (b *binary) start(args ...string) error {
 		return err
 	}
 	b.ps = cmd.Process
+	go io.Copy(os.Stdout, stdout)
+	go io.Copy(os.Stdout, stderr)
 	b.stdout, _ = ioutil.ReadAll(stdout)
 	b.stderr, _ = ioutil.ReadAll(stderr)
 	return cmd.Wait()
 }
 
 func (b *binary) stop() error {
-	return b.ps.Signal(syscall.SIGKILL)
+	return b.ps.Signal(syscall.SIGTERM)
 }

@@ -20,6 +20,7 @@ import (
 
 	"github.com/robinmonjo/psdock/fsdriver"
 	"github.com/robinmonjo/psdock/notifier"
+	"github.com/robinmonjo/psdock/proc"
 	"github.com/robinmonjo/psdock/stream"
 )
 
@@ -53,7 +54,7 @@ func main() {
 		cli.StringFlag{Name: "binport, bp", Usage: "port the process is expected to bind"},
 		cli.StringFlag{Name: "user, u", Value: "root", Usage: "user inside container"},
 		cli.StringFlag{Name: "cwd", Usage: "set the current working dir"},
-		cli.IntFlag{Name: "kill-timeout", Value: 10, Usage: "time to wait for process gracefull stop before killing it"}
+		cli.IntFlag{Name: "kill-timeout", Value: 10, Usage: "time to wait for process gracefull stop before killing it"},
 	}
 	app.Commands = []cli.Command{
 		cli.Command{
@@ -175,7 +176,7 @@ func start(c *cli.Context) (int, error) {
 	}
 
 	// forward received signals to container process
-	go handleSignals(process, tty)
+	go handleSignals(process, container, tty)
 
 	// start container process
 	psStatusChanged(c, notifier.StatusStarting)
@@ -187,29 +188,53 @@ func start(c *cli.Context) (int, error) {
 	}
 
 	status, err := process.Wait()
+	psStatusChanged(c, notifier.StatusCrashed)
+
 	if err != nil {
 		return 1, err
 	}
-
-	// container's done
-	psStatusChanged(c, notifier.StatusCrashed)
 	return utils.ExitStatus(status.Sys().(syscall.WaitStatus)), nil
 }
 
-func handleSignals(process *libcontainer.Process, tty *tty) {
+func handleSignals(process *libcontainer.Process, container libcontainer.Container, tty *tty) {
 	sigc := make(chan os.Signal, 10)
 	signal.Notify(sigc)
 	for sig := range sigc {
-		switch sig {
-		case syscall.SIGWINCH:
-			if tty != nil {
-				tty.resize()
+		log.Infof("signal received: %v", sig)
+		if sig == syscall.SIGWINCH && tty != nil {
+			tty.resize()
+		} else if sig == syscall.SIGINT || sig == syscall.SIGTERM {
+			// init process will have PID 1 in the namespace and by default PID 1 ignore all signals (https://github.com/docker/docker/issues/7846)
+			// expect sigkill of course. Solution: inspect signal status (/proc/PID/signal), if it doesn't handle any signals, kill it otherwise
+			// just forward the signal
+
+			// if sigint or sigterm, check if the signal can caught them, if yes, send it otherwise kill the process (SIGSTOP and SIGKILL can't be caught)
+			log.Info("will handle the shit")
+			pid, err := initProcessPid(container)
+			if err != nil {
+				log.Errorf("error getting back PID: %v", err)
+			} else {
+				log.Info("PID is: %d", pid)
 			}
-		default:
-			log.Infof("signal received: %s", sig)
-			if err := process.Signal(sig); err != nil { //TODO some ps might catch the sigterm signal themselves
-				log.Errorf("failed to signal: %v", err)
+
+			ps, err := proc.NewProcStatus(pid)
+			if err != nil {
+				log.Error(err)
+				process.Signal(sig)
+				return
 			}
+
+			if ps.SignalCaught(sig.(syscall.Signal)) {
+				log.Infof("signal is caught so let the thing handle it: %v", sig)
+				process.Signal(sig)
+			} else {
+				log.Infof("signal is not caught, killing: %v", sig)
+				process.Signal(syscall.SIGKILL)
+			}
+
+		} else {
+			//forward the signal
+			process.Signal(sig)
 		}
 	}
 }
@@ -230,31 +255,18 @@ func monitorContainerStartup(container libcontainer.Container, c *cli.Context) {
 		return
 	}
 
-	//container process, expected to bind port, need to wait until we have a PID
-	for {
-		state, err := container.State()
-		if err != nil {
-			if err.(libcontainer.Error).Code() == libcontainer.ContainerNotExists {
-				time.Sleep(100 * time.Millisecond)
-				continue
-			} else {
-				log.Errorf("unable to get back container state: %v", err)
-				return
-			}
-		}
-
-		//state exists
-		if state.InitProcessPid != 0 {
-			if _, err := coprocs.Watch(fmt.Sprintf("%d", state.InitProcessPid), c.GlobalString("bindport")); err != nil {
-				log.Errorf("failed to watch port: %v", err)
-				return
-			}
-			//at this point the process has bound the port
-			psStatusChanged(c, notifier.StatusRunning)
-			return
-		}
-		time.Sleep(100 * time.Millisecond)
+	pid, err := initProcessPid(container)
+	if err != nil {
+		log.Errorf("unable to get back container init process pid: %v", err)
+		return
 	}
+
+	if _, err := coprocs.Watch(pid, c.GlobalString("bindport")); err != nil {
+		log.Errorf("failed to watch port: %v", err)
+		return
+	}
+	//at this point the process has bound the port
+	psStatusChanged(c, notifier.StatusRunning)
 }
 
 func psStatusChanged(c *cli.Context, status notifier.PsStatus) {
@@ -266,5 +278,27 @@ func psStatusChanged(c *cli.Context, status notifier.PsStatus) {
 
 	if err := notifier.NotifyHook(status); err != nil {
 		log.Error("failed to notify web hook %s: %v", wh, err)
+	}
+}
+
+func initProcessPid(container libcontainer.Container) (string, error) {
+	retryDelay := 100 * time.Millisecond
+
+	state, err := container.State()
+	if err != nil {
+		if err.(libcontainer.Error).Code() == libcontainer.ContainerNotExists {
+			time.Sleep(retryDelay)
+			return initProcessPid(container) //wait until the state exists
+		} else {
+			return "", err
+		}
+	}
+
+	//state exists
+	if state.InitProcessPid != 0 {
+		return fmt.Sprintf("%d", state.InitProcessPid), nil
+	} else {
+		time.Sleep(retryDelay)
+		return initProcessPid(container) //wait until the state exists
 	}
 }

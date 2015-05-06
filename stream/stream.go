@@ -44,11 +44,14 @@ func NewStream(uri string, pref string, prefColor Color) (*Stream, error) {
 
 	path := u.Host + u.Path
 
+	if u.Scheme == "" && path != "" {
+		u.Scheme = "file"
+	}
+
 	switch u.Scheme {
 	case "":
 		s.Input = os.Stdin //use standard input, output
 		s.Output = os.Stdout
-
 	case "file":
 		f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {

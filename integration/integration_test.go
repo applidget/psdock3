@@ -105,6 +105,7 @@ func Test_bindPort(t *testing.T) {
 		}
 	}()
 	wgRunning.Wait()
+	fmt.Println("pid:", b.ps.Pid)
 	if err := b.stop(); err != nil {
 		fmt.Println(err)
 	}
