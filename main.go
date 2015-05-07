@@ -16,10 +16,10 @@ import (
 	"github.com/docker/libcontainer"
 	"github.com/docker/libcontainer/utils"
 
-	"github.com/robinmonjo/psdock/coprocs"
-
 	"github.com/robinmonjo/psdock/fsdriver"
+	_ "github.com/robinmonjo/psdock/logrotate"
 	"github.com/robinmonjo/psdock/notifier"
+	"github.com/robinmonjo/psdock/portwatcher"
 	"github.com/robinmonjo/psdock/proc"
 	"github.com/robinmonjo/psdock/stream"
 )
@@ -54,7 +54,6 @@ func main() {
 		cli.StringFlag{Name: "binport, bp", Usage: "port the process is expected to bind"},
 		cli.StringFlag{Name: "user, u", Value: "root", Usage: "user inside container"},
 		cli.StringFlag{Name: "cwd", Usage: "set the current working dir"},
-		cli.IntFlag{Name: "kill-timeout", Value: 10, Usage: "time to wait for process gracefull stop before killing it"},
 	}
 	app.Commands = []cli.Command{
 		cli.Command{
@@ -261,7 +260,7 @@ func monitorContainerStartup(container libcontainer.Container, c *cli.Context) {
 		return
 	}
 
-	if _, err := coprocs.Watch(pid, c.GlobalString("bindport")); err != nil {
+	if _, err := portwatcher.Watch(pid, c.GlobalString("bindport")); err != nil {
 		log.Errorf("failed to watch port: %v", err)
 		return
 	}

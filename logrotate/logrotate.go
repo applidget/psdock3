@@ -1,4 +1,4 @@
-package coprocs
+package logrotate
 
 //output are written to a file file_name, when starting, we need to
 // 1: watch if file file_name exists.

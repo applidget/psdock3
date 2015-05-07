@@ -1,4 +1,4 @@
-package coprocs
+package logrotate
 
 import (
 	"compress/gzip"

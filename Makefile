@@ -12,7 +12,8 @@ integration-test:
 	sudo PATH=$(PATH):`pwd` GOPATH=$(GOPATH) $(GO) test
 
 test:
-	GOPATH=$(GOPATH) bash -c 'cd coprocs && go test'
+	GOPATH=$(GOPATH) bash -c 'cd logrotate && go test'
+	GOPATH=$(GOPATH) bash -c 'cd portwatcher && go test'
 	GOPATH=$(GOPATH) bash -c 'cd stream && go test'
 	sudo GOPATH=$(GOPATH) bash -c 'cd fsdriver && $(GO) test'
 	sudo GO_ENV=testing PATH=$(PATH):`pwd` GOPATH=$(GOPATH) bash -c 'cd integration && $(GO) test'

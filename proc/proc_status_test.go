@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 	"sync"
+	"syscall"
 	"testing"
 )
 
@@ -34,7 +35,6 @@ func Test_decodeMask(t *testing.T) {
 }
 
 func Test_procInfo(t *testing.T) {
-
 	var wg sync.WaitGroup
 	wg.Add(1)
 
@@ -62,5 +62,35 @@ func Test_procInfo(t *testing.T) {
 
 	if ps.Pid != pid {
 		t.Fatalf("expected pid %s got %s", pid, ps.Pid)
+	}
+
+	//tail is not supposed to catch anything ...
+
+	if len(ps.SigIgn) > 0 {
+		t.Fatalf("tail shouldn't ignore %v", ps.SigIgn)
+	}
+
+	if len(ps.SigCgt) > 0 {
+		t.Fatalf("tail shouldn't catch %v", ps.SigCgt)
+	}
+
+	if len(ps.SigBlk) > 0 {
+		t.Fatalf("tail shouldn't block %v", ps.SigBlk)
+	}
+}
+
+func Test_procInfoOnInit(t *testing.T) {
+	ps, err := NewProcStatus("1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	//init process should at least block sigint and sigterm
+	if !ps.SignalBlocked(syscall.SIGTERM) {
+		t.Fatal("not detecting init blocking SIGTERM")
+	}
+
+	if !ps.SignalBlocked(syscall.SIGINT) {
+		t.Fatal("not detecting init blocking SIGINT")
 	}
 }

@@ -1,4 +1,4 @@
-package coprocs
+package portwatcher
 
 import (
 	"fmt"
@@ -40,7 +40,7 @@ func Watch(pid, port string) (string, error) {
 	return Watch(pid, port)
 }
 
-// children return children and grand children of the given pid.
+// children return children and grand ... children  of the given pid.
 func children(pid string) ([]string, error) {
 	out, err := exec.Command("pgrep", "-P", pid).Output()
 	if err != nil {
