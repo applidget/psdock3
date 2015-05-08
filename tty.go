@@ -4,7 +4,6 @@ package main
 
 import (
 	"io"
-	"log"
 	"os"
 
 	"github.com/docker/docker/pkg/term"
@@ -39,7 +38,6 @@ func (t *tty) attach(s *stream.Stream) error {
 
 	go func() {
 		io.Copy(s, t.console)
-		log.Println("EOF for STDOUT")
 		s.Close()
 	}()
 
@@ -50,7 +48,6 @@ func (t *tty) attach(s *stream.Stream) error {
 	go func() {
 		io.Copy(t.console, s)
 		s.Close()
-		log.Println("EOF for STDIN")
 	}()
 
 	if s.Input == os.Stdin {

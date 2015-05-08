@@ -141,11 +141,11 @@ func (s *Stream) Read(p []byte) (int, error) {
 }
 
 func (s *Stream) Close() {
-	if rc, ok := s.Input.(io.ReadCloser); ok {
+	if rc, ok := s.Input.(io.ReadCloser); ok && s.Input != os.Stdin {
 		rc.Close()
 	}
 
-	if wc, ok := s.Output.(io.WriteCloser); ok {
+	if wc, ok := s.Output.(io.WriteCloser); ok && s.Output != os.Stdout {
 		wc.Close()
 	}
 	s.CloseCh <- true

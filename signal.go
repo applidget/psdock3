@@ -50,8 +50,7 @@ func (h *signalHandler) handleInterupt(sig os.Signal) error {
 	// if sigint or sigterm, check if the signal can caught them, if yes, send it otherwise kill the process (SIGSTOP and SIGKILL can't be caught)
 	pid, err := initProcessPid(h.container)
 	if err != nil {
-		log.Errorf("error getting back PID: %v", err)
-		//couldn't get pid, fallabck
+		//couldn't get pid, fallabck (probably the process died, already, anyway falling back to default)
 		return h.handleDefault(sig)
 	}
 

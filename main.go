@@ -163,7 +163,7 @@ func start(c *cli.Context) (int, error) {
 		defer tty.Close()
 	}
 
-	log.Infof("Stream is interactive: %v, is terminal: %v", s.Interactive(), s.Terminal())
+	//log.Infof("Stream is interactive: %v, is terminal: %v", s.Interactive(), s.Terminal())
 
 	// forward received signals to container process
 	signalHandler := &signalHandler{container: container, process: process, tty: tty}
