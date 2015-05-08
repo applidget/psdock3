@@ -160,14 +160,22 @@ func start(c *cli.Context) (int, error) {
 		}
 		tty.resize()
 
-		//at this point os.Stdout might not be usable anymore so logs of logrus wont work
-		// I would bufferise them in a file and before exiting, output them (after tty.Close())
 		defer tty.Close()
 	}
+
+	log.Infof("Stream is interactive: %v, is terminal: %v", s.Interactive(), s.Terminal())
 
 	// forward received signals to container process
 	signalHandler := &signalHandler{container: container, process: process, tty: tty}
 	go signalHandler.startCatching()
+
+	if s.Interactive() {
+		go func() {
+			<-s.CloseCh
+			//if interactive and stream closed, send a sigterm to the process
+			signalHandler.handleInterupt(syscall.SIGTERM)
+		}()
+	}
 
 	// start container process
 	statusChanged := func(status notifier.PsStatus) {

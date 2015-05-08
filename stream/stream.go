@@ -12,7 +12,9 @@ import (
 	"github.com/docker/docker/pkg/term"
 )
 
-const DIAL_TIMEOUT = 5 * time.Second
+const (
+	DIAL_TIMEOUT = 5 * time.Second
+)
 
 type Color uint8
 
@@ -28,10 +30,11 @@ const (
 )
 
 type Stream struct {
-	URL    *url.URL
-	prefix []byte
-	Input  io.Reader
-	Output io.Writer
+	URL     *url.URL
+	prefix  []byte
+	Input   io.Reader
+	Output  io.Writer
+	CloseCh chan bool
 }
 
 func NewStream(uri string, pref string, prefColor Color) (*Stream, error) {
@@ -81,8 +84,14 @@ func NewStream(uri string, pref string, prefColor Color) (*Stream, error) {
 	}
 
 	if pref != "" {
-		s.prefix = []byte(escapeCode(prefColor) + pref + " - " + "\x1b[0m")
+		if prefColor == NoColor {
+			s.prefix = []byte(pref)
+		} else {
+			s.prefix = []byte(escapeCode(prefColor) + pref + resetEscapeCode())
+		}
 	}
+
+	s.CloseCh = make(chan bool, 10)
 
 	return s, nil
 }
@@ -95,6 +104,10 @@ func (s *Stream) Interactive() bool {
 		return true //assume connection stream are interactive
 	}
 
+	return s.Terminal()
+}
+
+func (s *Stream) Terminal() bool {
 	_, isTerminalIn := term.GetFdInfo(s.Input)
 	_, isTerminalOut := term.GetFdInfo(s.Output)
 	return isTerminalIn && isTerminalOut
@@ -135,6 +148,7 @@ func (s *Stream) Close() {
 	if wc, ok := s.Output.(io.WriteCloser); ok {
 		wc.Close()
 	}
+	s.CloseCh <- true
 }
 
 func MapColor(c string) Color {
@@ -179,4 +193,8 @@ func escapeCode(color Color) string {
 	default:
 		return ""
 	}
+}
+
+func resetEscapeCode() string {
+	return "\x1b[0m"
 }

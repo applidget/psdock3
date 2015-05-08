@@ -53,19 +53,30 @@ func Test_remoteStream(t *testing.T) {
 		t.Fatal("expected to receive %s, got %s", string(mess), received)
 	}
 
+	//make sure close channel is called
+	wg.Add(1)
+	go func() {
+		<-s.CloseCh
+		wg.Done()
+	}()
+
+	s.Close()
+
+	wg.Wait()
+
 	fmt.Println("done")
 }
 
 func Test_fileStream(t *testing.T) {
-	fmt.Printf("File stream ... ")
-	s, err := NewStream("file:///tmp/psdock_test.log", "", NoColor)
+	fmt.Printf("File stream with prefix ... ")
+	s, err := NewStream("file:///tmp/psdock_test.log", "prefix ", NoColor)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if s.Input != nil {
 		t.Fatal("file stream are not expected to have input streams")
 	}
-	s.Output.Write([]byte("foo bar"))
+	s.Write([]byte("foo bar"))
 	s.Close()
 
 	content, err := ioutil.ReadFile("/tmp/psdock_test.log")
@@ -73,8 +84,8 @@ func Test_fileStream(t *testing.T) {
 		t.Fatal(err)
 	}
 	os.Remove("/tmp/psdock_test.log")
-	if string(content) != "foo bar" {
-		t.Fatalf("expecting \"foo bar\" got %s", string(content))
+	if string(content) != "prefix foo bar" {
+		t.Fatalf("expecting \"prefix foo bar\" got \"%s\"", string(content))
 	}
 
 	fmt.Println("done")

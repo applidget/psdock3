@@ -46,6 +46,10 @@ ROADMAP
 
 --> release and deploy and hourray !
 
+TODO:
+- tester comment ça marche avec upstart et system d (should be no problem)
+
+
 A voir
 
 - on peut avoir tout les process dans le conteneur, utiliser ça pour le port watcher ?

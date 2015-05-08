@@ -4,6 +4,7 @@ package main
 
 import (
 	"io"
+	"log"
 	"os"
 
 	"github.com/docker/docker/pkg/term"
@@ -36,13 +37,21 @@ func (t *tty) Close() error {
 
 func (t *tty) attach(s *stream.Stream) error {
 
-	go io.Copy(s, t.console)
+	go func() {
+		io.Copy(s, t.console)
+		log.Println("EOF for STDOUT")
+		s.Close()
+	}()
 
 	if s.Input == nil {
 		return nil
 	}
 
-	go io.Copy(t.console, s)
+	go func() {
+		io.Copy(t.console, s)
+		s.Close()
+		log.Println("EOF for STDIN")
+	}()
 
 	if s.Input == os.Stdin {
 		state, err := term.SetRawTerminal(os.Stdin.Fd())
