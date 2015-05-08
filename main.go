@@ -113,12 +113,8 @@ func start(c *cli.Context) (int, error) {
 		return 1, err
 	}
 
-	uid, err := utils.GenerateRandomName("psdock_", 7)
-	if err != nil {
-		return 1, err
-	}
-	config := loadConfig(uid, rootfs)
-	container, err := factory.Create(uid, config)
+	config := loadConfig(rootfs)
+	container, err := factory.Create("psdock", config)
 	if err != nil {
 		return 1, err
 	}
