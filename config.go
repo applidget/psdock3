@@ -8,7 +8,6 @@ import (
 
 const defaultMountFlags = syscall.MS_NOEXEC | syscall.MS_NOSUID | syscall.MS_NODEV
 
-//if ipAddr == "", will use host network otherwise, will setup the net namespace
 func loadConfig(uid, rootfs string) *configs.Config {
 	var config = &configs.Config{
 		Rootfs:            rootfs,

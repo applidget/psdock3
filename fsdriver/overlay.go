@@ -11,7 +11,7 @@ import (
 // Driver create a usable rootfs from an imutable image directory
 type Driver interface {
 	SetupRootfs() error
-	CleanupRootf() error
+	CleanupRootfs() error
 }
 
 type Overlay struct {
