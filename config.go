@@ -98,8 +98,8 @@ func loadConfig(uid, rootfs string) *configs.Config {
 		Rlimits: []configs.Rlimit{
 			{
 				Type: syscall.RLIMIT_NOFILE,
-				Hard: uint64(24576),
-				Soft: uint64(24576),
+				Hard: uint64(4096),
+				Soft: uint64(4096),
 			},
 		},
 	}

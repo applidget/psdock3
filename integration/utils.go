@@ -1,9 +1,14 @@
 package integration
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/robinmonjo/psdock/notifier"
 )
 
 const imagePath = "/tmp/image"
@@ -23,4 +28,14 @@ func fileExists(name string) bool {
 		return false
 	}
 	return true
+}
+
+func statusFromHookBody(body io.Reader, t *testing.T) notifier.PsStatus {
+	var payload notifier.HookPayload
+
+	content, _ := ioutil.ReadAll(body)
+	if err := json.Unmarshal(content, &payload); err != nil {
+		t.Fatal(err)
+	}
+	return payload.Ps.Status
 }

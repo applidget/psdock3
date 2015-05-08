@@ -15,15 +15,18 @@ func Test_remoteStream(t *testing.T) {
 
 	//create a simple tcp server
 	ln, err := net.Listen("tcp", ":9999")
-	defer ln.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer ln.Close()
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		conn, err := ln.Accept()
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		message, err := bufio.NewReader(conn).ReadString('\n')
 		if err != nil {
