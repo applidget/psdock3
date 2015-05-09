@@ -14,7 +14,7 @@ func Test_simpleStart(t *testing.T) {
 	beforeTest(t)
 	fmt.Printf("testing simple start ... ")
 	b := newBinary()
-	err := b.start("-i", imagePath, "-r", "/tmp/test_psdock_roo", "ls")
+	err := b.start("-image", imagePath, "-rootfs", "/tmp/test_psdock_roo", "ls")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func Test_webhook(t *testing.T) {
 	defer ts.Close()
 
 	b := newBinary()
-	err := b.start("-i", imagePath, "-r", "/tmp/test_psdock_roo", "-wh", ts.URL, "ls")
+	err := b.start("-image", imagePath, "-rootfs", "/tmp/test_psdock_roo", "-web-hook", ts.URL, "ls")
 	if err != nil {
 		fmt.Println(b.debugInfo())
 		t.Fatal(err)
@@ -67,7 +67,7 @@ func Test_bindPort(t *testing.T) {
 
 	b := newBinary()
 	go func() {
-		err := b.start("-i", imagePath, "-r", "/tmp/test_psdock_roo", "-wh", ts.URL, "--bp", "9778", "nc", "-l", "9778")
+		err := b.start("-image", imagePath, "-rootfs", "/tmp/test_psdock_roo", "-web-hook", ts.URL, "-bind-port", "9778", "nc", "-l", "9778")
 		if err != nil {
 			fmt.Println(b.debugInfo())
 			t.Fatal(err)
@@ -127,7 +127,7 @@ func Test_remoteStdio(t *testing.T) {
 
 	b := newBinary()
 	go func() {
-		if err := b.start("-i", imagePath, "-r", "/tmp/test_psdock_roo", "-wh", ts.URL, "-stdio", "tcp://localhost:9999", "tail", "-f"); err != nil {
+		if err := b.start("-image", imagePath, "-rootfs", "/tmp/test_psdock_roo", "-web-hook", ts.URL, "-stdio", "tcp://localhost:9999", "tail", "-f"); err != nil {
 			fmt.Println(b.debugInfo())
 			t.Fatal(err)
 		}

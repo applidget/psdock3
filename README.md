@@ -13,19 +13,19 @@
 
 psdock -i <image> -r <rootfs> [OPTIONS] command
 
--image            # required
--rootfs           # required
--stdio            # default stdin and stdout, can be file:// tcp:// tls:// ssl:// etc ...
--bind-port        # port expected to be bound
--user             # user of the process
--cwd              # cwd of the process
--web-hook         # url of the hook
--stdout-prefix    # someprefixes:green
--path             # will be happened to standard PATH
--env              # (see how multiple args work with cli)
--hostname         # hostname
--bind-mount       # (see how multiple args work with cli)
--log-rotate       # int in hours (1)
+-image            # required (ok)
+-rootfs           # required (ok)
+-stdio            # default stdin and stdout, can be file:// tcp:// tls:// ssl:// etc ... (ok)
+-bind-port        # port expected to be bound (ok)
+-user             # user of the process (ok)
+-cwd              # cwd of the process (ok)
+-web-hook         # url of the hook (ok)
+-stdout-prefix    # someprefixes:green (ok)
+-path             # will be happened to standard PATH (TODO)
+-env              # (see how multiple args work with cli) (TODO)
+-hostname         # hostname (TODO)
+-bind-mount       # (see how multiple args work with cli) (TODO)
+-log-rotate       # int in hours (1) (TODO)
 
 ##dependencies
 

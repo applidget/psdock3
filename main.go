@@ -34,12 +34,12 @@ func main() {
 	app.Usage = "simple container engine specialized in PaaS"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{Name: "image, i", Usage: "container image"},
-		cli.StringFlag{Name: "rootfs, r", Usage: "container image"},
+		cli.StringFlag{Name: "rootfs, r", Usage: "container rootfs"},
 		cli.StringFlag{Name: "stdio", Usage: "standard input/output connection, if not specified, will use os stdin and stdout"},
-		cli.StringFlag{Name: "prefix", Usage: "add a prefix to container output lines (format: <prefix>:<color>)"},
-		cli.StringFlag{Name: "webhook, wh", Usage: "web hook to notify process status"},
-		cli.StringFlag{Name: "binport, bp", Usage: "port the process is expected to bind"},
-		cli.StringFlag{Name: "user, u", Value: "root", Usage: "user inside container"},
+		cli.StringFlag{Name: "stdout-prefix", Usage: "add a prefix to container output lines (format: <prefix>:<color>)"},
+		cli.StringFlag{Name: "web-hook", Usage: "web hook to notify process status"},
+		cli.StringFlag{Name: "bind-port", Usage: "port the process is expected to bind"},
+		cli.StringFlag{Name: "user", Value: "root", Usage: "user inside container"},
 		cli.StringFlag{Name: "cwd", Usage: "set the current working dir"},
 	}
 	app.Commands = []cli.Command{
@@ -112,7 +112,7 @@ func start(c *cli.Context) (int, error) {
 	}
 
 	// create container
-	cuid, _ := utils.GenerateRandomName("psdock", 7)
+	cuid, _ := utils.GenerateRandomName("psdock_", 7)
 	config := loadConfig(cuid, rootfs)
 	container, err := factory.Create(cuid, config)
 	if err != nil {
@@ -129,7 +129,7 @@ func start(c *cli.Context) (int, error) {
 	}
 
 	// prepare stdio stream
-	pref, prefColor := parsePrefixArg(c.GlobalString("prefix"))
+	pref, prefColor := parsePrefixArg(c.GlobalString("stdout-prefix"))
 	s, err := stream.NewStream(c.GlobalString("stdio"), pref, prefColor)
 	if err != nil {
 		return 1, err
@@ -177,7 +177,7 @@ func start(c *cli.Context) (int, error) {
 	statusChanged(c, notifier.StatusStarting)
 	defer statusChanged(c, notifier.StatusCrashed)
 
-	if c.GlobalString("bindport") == "" {
+	if c.GlobalString("bind-port") == "" {
 		statusChanged(c, notifier.StatusRunning)
 	} else {
 		go func() {
@@ -187,8 +187,9 @@ func start(c *cli.Context) (int, error) {
 				log.Errorf("unable to get back container init process pid: %v", err)
 				return
 			}
-			if _, err := portwatcher.Watch(pid, c.GlobalString("bindport")); err != nil {
-				log.Errorf("failed to watch port: %v", err)
+			port := c.GlobalString("bind-port")
+			if _, err := portwatcher.Watch(pid, port); err != nil {
+				log.Errorf("failed to watch port %s: %v", port, err)
 				return
 			}
 			//at this point the process has bound the port
@@ -211,13 +212,13 @@ func start(c *cli.Context) (int, error) {
 
 // call webhook if needed
 func statusChanged(c *cli.Context, status notifier.PsStatus) {
-	wh := c.GlobalString("webhook")
+	wh := c.GlobalString("web-hook")
 	if wh == "" {
 		return
 	}
 	notifier.WebHook = wh
 
 	if err := notifier.NotifyHook(status); err != nil {
-		log.Error("failed to notify web hook %s: %v", wh, err)
+		log.Error("failed to notify web-hook %s: %v", wh, err)
 	}
 }
