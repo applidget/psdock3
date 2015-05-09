@@ -81,7 +81,7 @@ var (
 )
 
 func start(c *cli.Context) (int, error) {
-	// Mount usable rootfs (image are immutable)
+	// setup rootfs
 	image := c.GlobalString("image")
 	if image == "" {
 		return 1, fmt.Errorf("no image specified")
@@ -104,22 +104,23 @@ func start(c *cli.Context) (int, error) {
 	}
 	defer overlay.CleanupRootfs()
 
-	// package the app into the rootfs (bindmount ? cp ? possibility to have multi packer)
-
-	// Configure the container and its process
+	// create container factory
 	bin, _ := filepath.Abs(os.Args[0])
-	factory, err := libcontainer.New(rootfs, libcontainer.InitArgs(bin, "init"))
+	factory, err := libcontainer.New("/var/run/psdock", libcontainer.InitArgs(bin, "init"), libcontainer.Cgroupfs)
 	if err != nil {
 		return 1, err
 	}
 
-	config := loadConfig(rootfs)
-	container, err := factory.Create("psdock", config)
+	// create container
+	cuid, _ := utils.GenerateRandomName("psdock", 7)
+	config := loadConfig(cuid, rootfs)
+	container, err := factory.Create(cuid, config)
 	if err != nil {
 		return 1, err
 	}
 	defer container.Destroy()
 
+	// prepare process
 	process := &libcontainer.Process{
 		Args: c.Args(),
 		Env:  append(standardEnv, []string{}...),
@@ -127,6 +128,7 @@ func start(c *cli.Context) (int, error) {
 		Cwd:  c.GlobalString("cwd"),
 	}
 
+	// prepare stdio stream
 	pref, prefColor := parsePrefixArg(c.GlobalString("prefix"))
 	s, err := stream.NewStream(c.GlobalString("stdio"), pref, prefColor)
 	if err != nil {
@@ -159,8 +161,6 @@ func start(c *cli.Context) (int, error) {
 		defer tty.Close()
 	}
 
-	//log.Infof("Stream is interactive: %v, is terminal: %v", s.Interactive(), s.Terminal())
-
 	// forward received signals to container process
 	signalHandler := &signalHandler{container: container, process: process, tty: tty}
 	go signalHandler.startCatching()
@@ -174,22 +174,11 @@ func start(c *cli.Context) (int, error) {
 	}
 
 	// start container process
-	statusChanged := func(status notifier.PsStatus) {
-		wh := c.GlobalString("webhook")
-		if wh == "" {
-			return
-		}
-		notifier.WebHook = wh
-
-		if err := notifier.NotifyHook(status); err != nil {
-			log.Error("failed to notify web hook %s: %v", wh, err)
-		}
-	}
-
-	statusChanged(notifier.StatusStarting)
+	statusChanged(c, notifier.StatusStarting)
+	defer statusChanged(c, notifier.StatusCrashed)
 
 	if c.GlobalString("bindport") == "" {
-		statusChanged(notifier.StatusRunning)
+		statusChanged(c, notifier.StatusRunning)
 	} else {
 		go func() {
 			//wait until we have a pid and until the port is bound
@@ -203,19 +192,32 @@ func start(c *cli.Context) (int, error) {
 				return
 			}
 			//at this point the process has bound the port
-			statusChanged(notifier.StatusRunning)
+			statusChanged(c, notifier.StatusRunning)
 		}()
 	}
 
+	// start the container
 	if err := container.Start(process); err != nil {
 		return 1, err
 	}
 
+	// container exited
 	status, err := process.Wait()
-	statusChanged(notifier.StatusCrashed)
-
 	if err != nil {
 		return 1, err
 	}
 	return utils.ExitStatus(status.Sys().(syscall.WaitStatus)), nil
+}
+
+// call webhook if needed
+func statusChanged(c *cli.Context, status notifier.PsStatus) {
+	wh := c.GlobalString("webhook")
+	if wh == "" {
+		return
+	}
+	notifier.WebHook = wh
+
+	if err := notifier.NotifyHook(status); err != nil {
+		log.Error("failed to notify web hook %s: %v", wh, err)
+	}
 }

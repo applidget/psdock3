@@ -1,64 +1,65 @@
-#psdock
+
+
+#TODO now
+- uid for each container
+- tests to make sure 2 processes can be ran at the same time
+- implements all missing flags
+- write scrip equivalent to lxc-ls with cool infos (i.e: command / pid): psdock-ls (NEW BINARY)
+-
 
 ##Notion
 
-##API:
+##usage
 
-psdock -i /path/to/image -r /path/to/rootfs command_to_run
+psdock -i <image> -r <rootfs> [OPTIONS] command
 
-psdock -i /path/to/image -r /path/to/rootfs -stdio <stdio_value> command_to_run
+-image            # required
+-rootfs           # required
+-stdio            # default stdin and stdout, can be file:// tcp:// tls:// ssl:// etc ...
+-bind-port        # port expected to be bound
+-user             # user of the process
+-cwd              # cwd of the process
+-web-hook         # url of the hook
+-stdout-prefix    # someprefixes:green
+-path             # will be happened to standard PATH
+-env              # (see how multiple args work with cli)
+-hostname         # hostname
+-bind-mount       # (see how multiple args work with cli)
+-log-rotate       # int in hours (1)
 
-where <stdio_value> may be:
-* file:///path/to/logfile.log
-* tcp://tcp.remote.com
-* tls://tcp.remote.com:422
-* ...
+##dependencies
 
-psdock -i /path/to/image -r /path/to/rootfs -prefix some_prefix:color command_to_run
+- overlay (kernel 3.18 or over)
+- if -bind-port used: pgrep and lsof
+- cgroup-lites
 
-where color can be
-...
+##good to know
 
+- all running container info will be in /var/run/psdock/* (maybe create a tool to list them ?)
+- rootfs are ephemeral, when the process stop, they will be destroyed
+- images are immutable (to create one, spawn bash into psdock, make changes and then copy rootfs before it's destroyed)
 
-psdock -i image SOME_UID -h hostname command_to_run
+##images
 
--i immutable image
--uid if it's already running, enter the container
--h container hostname
+- waiting for: https://github.com/docker/distribution/tree/master/cmd/dist to be ready
 
-ROADMAP
+##TODO
 
-- tests, tests, tests
-- stdout prefix and prefix color --> done
-- log rotation --> done
-- set process user --> done
-- notifier --> done
-- bind port option --> done
-- mount rootfs --> done
-- check to get dns working inside the container --> done
-- cpu share / memory limit
-- restart on OOM notification
+- finalize API
+- proper way of options handling and checkin
+- try it with upstart
 
+##roadmap
 
-- package app that conforms to heroku built app (copy in /app, source what needed and launch the app)
-- possibility to enter a given container ?
-- libnetwork looks pretty good
-
---> release and deploy and hourray !
-
-TODO:
-- tester comment ça marche avec upstart et system d (should be no problem)
+- handle limitation (memory / swap /cpu)
+- handle OOM notification with different strategies (restart / ...)
+- remove pgrep and lsof dependencies (http://unix.stackexchange.com/questions/131101/without-using-network-command-lines-in-linux-how-to-know-list-of-open-ports-and)
+- thoughts on network namespace (libnetwork looks very promising)
+- possibility to enter a running container ?
 
 
-A voir
+##remote stdio client
 
-- on peut avoir tout les process dans le conteneur, utiliser ça pour le port watcher ?
-- si on utilise le network de l'host ça va pour le port watcher mais sinon ...
+- stty raw -echo
 
-Requirements
-
-if using bindport: pgrep and lsof
-
-Info on remote stdin
-
-stty raw -echo
+##how signals are handled

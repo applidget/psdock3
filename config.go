@@ -1,7 +1,6 @@
 package main
 
 import (
-	"path/filepath"
 	"syscall"
 
 	"github.com/docker/libcontainer/configs"
@@ -9,7 +8,7 @@ import (
 
 const defaultMountFlags = syscall.MS_NOEXEC | syscall.MS_NOSUID | syscall.MS_NODEV
 
-func loadConfig(rootfs string) *configs.Config {
+func loadConfig(uid, rootfs string) *configs.Config {
 	var config = &configs.Config{
 		Rootfs:            rootfs,
 		ParentDeathSignal: int(syscall.SIGKILL),
@@ -36,7 +35,7 @@ func loadConfig(rootfs string) *configs.Config {
 			{Type: configs.NEWPID},
 		}),
 		Cgroups: &configs.Cgroup{
-			Name:            filepath.Base(rootfs),
+			Name:            uid,
 			Parent:          "psdock",
 			AllowAllDevices: false,
 			AllowedDevices:  configs.DefaultAllowedDevices,
