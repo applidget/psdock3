@@ -8,7 +8,7 @@ import (
 
 const defaultMountFlags = syscall.MS_NOEXEC | syscall.MS_NOSUID | syscall.MS_NODEV
 
-func loadConfig(uid, rootfs string) *configs.Config {
+func loadConfig(uid, rootfs, hostname string) *configs.Config {
 	var config = &configs.Config{
 		Rootfs:            rootfs,
 		ParentDeathSignal: int(syscall.SIGKILL),
@@ -40,7 +40,7 @@ func loadConfig(uid, rootfs string) *configs.Config {
 			AllowAllDevices: false,
 			AllowedDevices:  configs.DefaultAllowedDevices,
 		},
-		Hostname: "psdock",
+		Hostname: hostname,
 		Devices:  configs.DefaultAutoCreatedDevices,
 		MaskPaths: []string{
 			"/proc/kcore",

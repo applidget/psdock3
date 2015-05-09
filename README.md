@@ -1,7 +1,6 @@
 
 
 #TODO now
-- uid for each container
 - tests to make sure 2 processes can be ran at the same time
 - implements all missing flags
 - write scrip equivalent to lxc-ls with cool infos (i.e: command / pid): psdock-ls (NEW BINARY)
@@ -21,9 +20,8 @@ psdock -i <image> -r <rootfs> [OPTIONS] command
 -cwd              # cwd of the process (ok)
 -web-hook         # url of the hook (ok)
 -stdout-prefix    # someprefixes:green (ok)
--path             # will be happened to standard PATH (TODO)
--env              # (see how multiple args work with cli) (TODO)
--hostname         # hostname (TODO)
+-env              # (see how multiple args work with cli) (ok)
+-hostname         # hostname (ok)
 -bind-mount       # (see how multiple args work with cli) (TODO)
 -log-rotate       # int in hours (1) (TODO)
 

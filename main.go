@@ -25,6 +25,11 @@ const (
 	libcontainerVersion = "b6cf7a6c8520fd21e75f8b3becec6dc355d844b0"
 )
 
+var standardEnv = &cli.StringSlice{
+	"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+	"TERM=xterm",
+}
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "psdock"
@@ -41,6 +46,8 @@ func main() {
 		cli.StringFlag{Name: "bind-port", Usage: "port the process is expected to bind"},
 		cli.StringFlag{Name: "user", Value: "root", Usage: "user inside container"},
 		cli.StringFlag{Name: "cwd", Usage: "set the current working dir"},
+		cli.StringFlag{Name: "hostname", Value: "psdock", Usage: "set the container hostname"},
+		cli.StringSliceFlag{Name: "env, e", Value: standardEnv, Usage: "set environment variables for the process"},
 	}
 	app.Commands = []cli.Command{
 		cli.Command{
@@ -76,10 +83,6 @@ func initAction(c *cli.Context) {
 	panic("This line should never been executed")
 }
 
-var (
-	standardEnv = []string{"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "HOSTNAME=psdock", "TERM=xterm"}
-)
-
 func start(c *cli.Context) (int, error) {
 	// setup rootfs
 	image := c.GlobalString("image")
@@ -113,7 +116,7 @@ func start(c *cli.Context) (int, error) {
 
 	// create container
 	cuid, _ := utils.GenerateRandomName("psdock_", 7)
-	config := loadConfig(cuid, rootfs)
+	config := loadConfig(cuid, rootfs, c.GlobalString("hostname"))
 	container, err := factory.Create(cuid, config)
 	if err != nil {
 		return 1, err
@@ -123,7 +126,7 @@ func start(c *cli.Context) (int, error) {
 	// prepare process
 	process := &libcontainer.Process{
 		Args: c.Args(),
-		Env:  append(standardEnv, []string{}...),
+		Env:  c.StringSlice("env"),
 		User: c.GlobalString("user"),
 		Cwd:  c.GlobalString("cwd"),
 	}
