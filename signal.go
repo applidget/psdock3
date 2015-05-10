@@ -11,9 +11,10 @@ import (
 )
 
 type signalHandler struct {
-	container libcontainer.Container
-	process   *libcontainer.Process
-	tty       *tty
+	container   libcontainer.Container
+	process     *libcontainer.Process
+	tty         *tty
+	forceKilled bool
 }
 
 func (h *signalHandler) startCatching() {
@@ -67,6 +68,7 @@ func (h *signalHandler) handleInterupt(sig os.Signal) error {
 	}
 
 	log.Infof("signal is not caught, killing: %v", sig)
+	h.forceKilled = true
 	return h.process.Signal(syscall.SIGKILL)
 }
 

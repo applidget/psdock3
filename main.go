@@ -215,6 +215,11 @@ func start(c *cli.Context) (int, error) {
 	if err != nil {
 		return 1, err
 	}
+	/*if signalHandler.forceKilled {
+		//sigterm sent to process but was converted to a sigkill so assume no errors
+		log.Info("YOUHOU je suis la")
+		return 0, nil
+	}*/
 	return utils.ExitStatus(status.Sys().(syscall.WaitStatus)), nil
 }
 

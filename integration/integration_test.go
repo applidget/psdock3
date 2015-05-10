@@ -2,9 +2,12 @@ package integration
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/robinmonjo/psdock/notifier"
@@ -16,9 +19,51 @@ func Test_simpleStart(t *testing.T) {
 	b := newBinary()
 	err := b.start("-image", imagePath, "-rootfs", "/tmp/test_psdock_roo", "ls")
 	if err != nil {
+		fmt.Println(b.debugInfo())
 		t.Fatal(err)
 	}
 	//TODO check output
+	fmt.Println("done")
+}
+
+func Test_envAndHostname(t *testing.T) {
+	beforeTest(t)
+	fmt.Printf("setting env and hostname ... ")
+	b := newBinary()
+	err := b.start("-image", imagePath, "-rootfs", "/tmp/test_psdock_roo", "-env", "FOO=BAR", "-hostname", "foobar", "bash", "-c", "echo $FOO && hostname")
+	if err != nil {
+		fmt.Println(b.debugInfo())
+		t.Fatal(err)
+	}
+
+	cleanStdout := strings.Trim(string(b.stdout), "\n")
+
+	if cleanStdout != "BAR\nfoobar" {
+		t.Fatalf("expected output to be BAR\nfoobar got %s", cleanStdout)
+	}
+
+	fmt.Println("done")
+}
+
+func Test_bindMount(t *testing.T) {
+	beforeTest(t)
+	fmt.Printf("testing bind mounts ... ")
+
+	//create a temp file
+	f, err := ioutil.TempFile("", "psdock_test_")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(f.Name())
+
+	b := newBinary()
+	test := fmt.Sprintf("test -f %s", f.Name()) // exits 0 if exists, 1 otherwise
+	err = b.start("-image", imagePath, "-rootfs", "/tmp/test_psdock_roo", "-bind-mount", "/tmp:/tmp:ro", "bash", "-c", test)
+	if err != nil {
+		fmt.Println(b.debugInfo())
+		t.Fatal(err)
+	}
+
 	fmt.Println("done")
 }
 
@@ -97,6 +142,7 @@ func Test_bindPort(t *testing.T) {
 	fmt.Println("done")
 }
 
+//this test i buggy
 func Test_remoteStdio(t *testing.T) {
 	beforeTest(t)
 	fmt.Printf("testing remote stdio ... ")
@@ -127,7 +173,7 @@ func Test_remoteStdio(t *testing.T) {
 
 	b := newBinary()
 	go func() {
-		if err := b.start("-image", imagePath, "-rootfs", "/tmp/test_psdock_roo", "-web-hook", ts.URL, "-stdio", "tcp://localhost:9999", "tail", "-f"); err != nil {
+		if err := b.start("-image", imagePath, "-rootfs", "/tmp/test_psdock_roo", "-web-hook", ts.URL, "-stdio", "tcp://localhost:9999", "tail", "-f", "/etc/resolv.conf"); err != nil {
 			fmt.Println(b.debugInfo())
 			t.Fatal(err)
 		}
