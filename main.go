@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -23,6 +24,8 @@ import (
 const (
 	version             = "0.1"
 	libcontainerVersion = "b6cf7a6c8520fd21e75f8b3becec6dc355d844b0"
+
+	containersRoot = "/var/run/psdock"
 )
 
 var standardEnv = &cli.StringSlice{
@@ -110,7 +113,7 @@ func start(c *cli.Context) (int, error) {
 
 	// create container factory
 	bin, _ := filepath.Abs(os.Args[0])
-	factory, err := libcontainer.New("/var/run/psdock", libcontainer.InitArgs(bin, "init"), libcontainer.Cgroupfs)
+	factory, err := libcontainer.New(containersRoot, libcontainer.InitArgs(bin, "init"), libcontainer.Cgroupfs)
 	if err != nil {
 		return 1, err
 	}
@@ -127,6 +130,11 @@ func start(c *cli.Context) (int, error) {
 		return 1, err
 	}
 	defer container.Destroy()
+
+	//write PID of launching process, it will be next to the state.json file
+	if err := ioutil.WriteFile(filepath.Join(containersRoot, cuid, "pid"), []byte(fmt.Sprintf("%d", os.Getpid())), 0600); err != nil {
+		return 1, err
+	}
 
 	// prepare process
 	process := &libcontainer.Process{
@@ -147,7 +155,7 @@ func start(c *cli.Context) (int, error) {
 	var tty *tty
 	if !s.Interactive() {
 		//no tty
-		process.Stdin = os.Stdin
+		process.Stdin = nil
 		process.Stdout = s
 		process.Stderr = s
 	} else {

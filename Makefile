@@ -6,6 +6,7 @@ HARDWARE=$(shell uname -m)
 
 build: vendor
 	GOPATH=$(GOPATH) go build
+	GOPATH=$(GOPATH) bash -c 'cd psdock-ls && go build'
 
 integration-test:
 	GOPATH=$(GOPATH) go build
