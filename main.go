@@ -48,6 +48,7 @@ func main() {
 		cli.StringFlag{Name: "cwd", Usage: "set the current working dir"},
 		cli.StringFlag{Name: "hostname", Value: "psdock", Usage: "set the container hostname"},
 		cli.StringSliceFlag{Name: "env, e", Value: standardEnv, Usage: "set environment variables for the process"},
+		cli.StringSliceFlag{Name: "bind-mount", Value: &cli.StringSlice{}, Usage: "set bind mounts"},
 	}
 	app.Commands = []cli.Command{
 		cli.Command{
@@ -85,13 +86,13 @@ func initAction(c *cli.Context) {
 
 func start(c *cli.Context) (int, error) {
 	// setup rootfs
-	image := c.GlobalString("image")
+	image := c.String("image")
 	if image == "" {
 		return 1, fmt.Errorf("no image specified")
 	}
 	image = path.Clean(image)
 
-	rootfs := c.GlobalString("rootfs")
+	rootfs := c.String("rootfs")
 	if rootfs == "" {
 		return 1, fmt.Errorf("no rootfs specified")
 	}
@@ -116,7 +117,11 @@ func start(c *cli.Context) (int, error) {
 
 	// create container
 	cuid, _ := utils.GenerateRandomName("psdock_", 7)
-	config := loadConfig(cuid, rootfs, c.GlobalString("hostname"))
+	config, err := loadConfig(cuid, rootfs, c.String("hostname"), c.StringSlice("bind-mount"))
+	if err != nil {
+		return 1, err
+	}
+
 	container, err := factory.Create(cuid, config)
 	if err != nil {
 		return 1, err
@@ -127,13 +132,13 @@ func start(c *cli.Context) (int, error) {
 	process := &libcontainer.Process{
 		Args: c.Args(),
 		Env:  c.StringSlice("env"),
-		User: c.GlobalString("user"),
-		Cwd:  c.GlobalString("cwd"),
+		User: c.String("user"),
+		Cwd:  c.String("cwd"),
 	}
 
 	// prepare stdio stream
-	pref, prefColor := parsePrefixArg(c.GlobalString("stdout-prefix"))
-	s, err := stream.NewStream(c.GlobalString("stdio"), pref, prefColor)
+	pref, prefColor := parsePrefixArg(c.String("stdout-prefix"))
+	s, err := stream.NewStream(c.String("stdio"), pref, prefColor)
 	if err != nil {
 		return 1, err
 	}
@@ -180,7 +185,7 @@ func start(c *cli.Context) (int, error) {
 	statusChanged(c, notifier.StatusStarting)
 	defer statusChanged(c, notifier.StatusCrashed)
 
-	if c.GlobalString("bind-port") == "" {
+	if c.String("bind-port") == "" {
 		statusChanged(c, notifier.StatusRunning)
 	} else {
 		go func() {
@@ -190,7 +195,7 @@ func start(c *cli.Context) (int, error) {
 				log.Errorf("unable to get back container init process pid: %v", err)
 				return
 			}
-			port := c.GlobalString("bind-port")
+			port := c.String("bind-port")
 			if _, err := portwatcher.Watch(pid, port); err != nil {
 				log.Errorf("failed to watch port %s: %v", port, err)
 				return
@@ -215,7 +220,7 @@ func start(c *cli.Context) (int, error) {
 
 // call webhook if needed
 func statusChanged(c *cli.Context, status notifier.PsStatus) {
-	wh := c.GlobalString("web-hook")
+	wh := c.String("web-hook")
 	if wh == "" {
 		return
 	}

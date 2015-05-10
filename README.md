@@ -22,7 +22,7 @@ psdock -i <image> -r <rootfs> [OPTIONS] command
 -stdout-prefix    # someprefixes:green (ok)
 -env              # (see how multiple args work with cli) (ok)
 -hostname         # hostname (ok)
--bind-mount       # (see how multiple args work with cli) (TODO)
+-bind-mount       # (see how multiple args work with cli) (ok)
 -log-rotate       # int in hours (1) (TODO)
 
 ##dependencies

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"strings"
 	"syscall"
 
 	"github.com/docker/libcontainer/configs"
@@ -8,7 +10,8 @@ import (
 
 const defaultMountFlags = syscall.MS_NOEXEC | syscall.MS_NOSUID | syscall.MS_NODEV
 
-func loadConfig(uid, rootfs, hostname string) *configs.Config {
+// expected format for bindmounts: /source/to/mount:/dest/to/mount[:ro|rw]
+func loadConfig(uid, rootfs, hostname string, bindMounts []string) (*configs.Config, error) {
 	var config = &configs.Config{
 		Rootfs:            rootfs,
 		ParentDeathSignal: int(syscall.SIGKILL),
@@ -104,5 +107,30 @@ func loadConfig(uid, rootfs, hostname string) *configs.Config {
 		},
 	}
 
-	return config
+	//abb bind mounts if any
+	for _, rawBind := range bindMounts {
+		mount := &configs.Mount{
+			Device: "bind",
+			Flags:  syscall.MS_BIND | syscall.MS_REC,
+		}
+		parts := strings.SplitN(rawBind, ":", 3)
+		switch len(parts) {
+		default:
+			return nil, fmt.Errorf("invalid bind mount %s", rawBind)
+		case 2:
+			mount.Source, mount.Destination = parts[0], parts[1]
+		case 3:
+			mount.Source, mount.Destination = parts[0], parts[1]
+			switch parts[2] {
+			case "ro":
+				mount.Flags |= syscall.MS_RDONLY
+			case "rw":
+			default:
+				return nil, fmt.Errorf("invalid bind mount mode %s", parts[2])
+			}
+		}
+		config.Mounts = append(config.Mounts, mount)
+	}
+
+	return config, nil
 }
