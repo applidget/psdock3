@@ -31,8 +31,6 @@ func main() {
 		return
 	}
 
-	//func NewWriter(output io.Writer, minwidth, tabwidth, padding int, padchar byte, flags uint) *Writer
-
 	tw := tabwriter.NewWriter(os.Stdout, 0, 10, 3, '\t', 0)
 
 	fmt.Fprintln(tw, "#\tCONTAINER_ID\tROOTFS\tPID\tINIT_PID\tCOMMAND")
