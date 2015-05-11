@@ -142,7 +142,6 @@ func Test_bindPort(t *testing.T) {
 	fmt.Println("done")
 }
 
-//this test i buggy
 func Test_remoteStdio(t *testing.T) {
 	beforeTest(t)
 	fmt.Printf("testing remote stdio ... ")
@@ -173,7 +172,7 @@ func Test_remoteStdio(t *testing.T) {
 
 	b := newBinary()
 	go func() {
-		if err := b.start("-image", imagePath, "-rootfs", "/tmp/test_psdock_roo", "-web-hook", ts.URL, "-stdio", "tcp://localhost:9999", "tail", "-f", "/etc/resolv.conf"); err != nil {
+		if err := b.start("-image", imagePath, "-rootfs", "/tmp/test_psdock_roo", "-web-hook", ts.URL, "-stdio", "tcp://localhost:9999", "tail", "-f"); err != nil {
 			fmt.Println(b.debugInfo())
 			t.Fatal(err)
 		}

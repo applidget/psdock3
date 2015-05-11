@@ -33,14 +33,13 @@ func main() {
 
 	tw := tabwriter.NewWriter(os.Stdout, 0, 10, 3, '\t', 0)
 
-	fmt.Fprintln(tw, "#\tCONTAINER_ID\tROOTFS\tPID\tINIT_PID\tCOMMAND")
+	fmt.Fprintln(tw, "#\tCONTAINER_ID\tPID\tINIT_PID\tROOTFS\tCOMMAND")
 	for i, state := range states {
 		runningCmd, err := cmdForPid(state.InitProcessPid)
 		if err != nil {
 			runningCmd = "unknown"
 		}
-
-		line := fmt.Sprintf("%d\t%s\t%s\t%s\t%d\t%s", i, state.ID, state.Config.Rootfs, state.launcherProcessPid, state.InitProcessPid, runningCmd)
+		line := fmt.Sprintf("%d\t%s\t%s\t%d\t%s\t%s", i, state.ID, state.launcherProcessPid, state.InitProcessPid, state.Config.Rootfs, runningCmd)
 		fmt.Fprintln(tw, line)
 		tw.Flush()
 	}

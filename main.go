@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
 	"syscall"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -15,7 +17,7 @@ import (
 	"github.com/docker/libcontainer/utils"
 
 	"github.com/robinmonjo/psdock/fsdriver"
-	_ "github.com/robinmonjo/psdock/logrotate"
+	"github.com/robinmonjo/psdock/logrotate"
 	"github.com/robinmonjo/psdock/notifier"
 	"github.com/robinmonjo/psdock/portwatcher"
 	"github.com/robinmonjo/psdock/stream"
@@ -52,6 +54,7 @@ func main() {
 		cli.StringFlag{Name: "hostname", Value: "psdock", Usage: "set the container hostname"},
 		cli.StringSliceFlag{Name: "env, e", Value: standardEnv, Usage: "set environment variables for the process"},
 		cli.StringSliceFlag{Name: "bind-mount", Value: &cli.StringSlice{}, Usage: "set bind mounts"},
+		cli.IntFlag{Name: "log-rotate", Usage: "rotate stdout output (if stdio is a proper file)"},
 	}
 	app.Commands = []cli.Command{
 		cli.Command{
@@ -177,6 +180,14 @@ func start(c *cli.Context) (int, error) {
 		defer tty.Close()
 	}
 
+	//setup log rotation if wanted
+	if c.Int("log-rotate") > 0 && s.URL.Scheme == "file" {
+		r := logrotate.NewRotator(s.URL.Host + s.URL.Path)
+		r.RotationDelay = time.Duration(c.Int("log-rotate")) * time.Hour
+		go r.StartWatching()
+		defer r.StopWatching()
+	}
+
 	// forward received signals to container process
 	signalHandler := &signalHandler{container: container, process: process, tty: tty}
 	go signalHandler.startCatching()
@@ -220,15 +231,23 @@ func start(c *cli.Context) (int, error) {
 
 	// container exited
 	status, err := process.Wait()
+
 	if err != nil {
-		return 1, err
+		exitError, ok := err.(*exec.ExitError)
+		if ok {
+			status = exitError.ProcessState
+		} else {
+			return 1, err
+		}
 	}
-	/*if signalHandler.forceKilled {
+
+	exit := utils.ExitStatus(status.Sys().(syscall.WaitStatus))
+	if signalHandler.forceKilled && exit == 137 { //128 + 9 (kill) indicates a kill exit status
 		//sigterm sent to process but was converted to a sigkill so assume no errors
-		log.Info("YOUHOU je suis la")
 		return 0, nil
-	}*/
-	return utils.ExitStatus(status.Sys().(syscall.WaitStatus)), nil
+	}
+
+	return exit, nil
 }
 
 // call webhook if needed
