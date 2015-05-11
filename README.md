@@ -1,9 +1,8 @@
 
 
 #TODO now
-- tests to make sure 2 processes can be ran at the same time
-- implements all missing flags
--
+- integration tests to make sure 2 processes can be ran at the same time
+- integration tests log rotate ?
 
 ##Notion
 
@@ -11,28 +10,28 @@
 
 psdock -i <image> -r <rootfs> [OPTIONS] command
 
--image            # required (ok)
--rootfs           # required (ok)
+-image, i         # required (ok)
+-rootfs, r        # required (ok)
 -stdio            # default stdin and stdout, can be file:// tcp:// tls:// ssl:// etc ... (ok)
 -bind-port        # port expected to be bound (ok)
 -user             # user of the process (ok)
 -cwd              # cwd of the process (ok)
 -web-hook         # url of the hook (ok)
 -stdout-prefix    # someprefixes:green (ok)
--env              # one per env, -e available (ok)
+-env, e           # one per env, -e available (ok)
 -hostname         # hostname (ok)
 -bind-mount       # multiple args possible (ok)
 -log-rotate       # int in hours (1) (TODO)
 
 ##dependencies
 
-- overlay (kernel 3.18 or over)
+- overlay (kernel 3.18 or over) (might work on older kernel with overlayfs, need to test)
 - if -bind-port used: pgrep and lsof
 - cgroup-lites
 
 ##good to know
 
-- all running container info will be in /var/run/psdock/* (maybe create a tool to list them ?)
+- all running container info will be in /var/run/psdock/* (psdock-ls)
 - rootfs are ephemeral, when the process stop, they will be destroyed
 - images are immutable (to create one, spawn bash into psdock, make changes and then copy rootfs before it's destroyed)
 
@@ -58,5 +57,8 @@ psdock -i <image> -r <rootfs> [OPTIONS] command
 - stty raw -echo
 
 ##how signals are handled
+
+- init process in container so kernel will ign and blk some signals
+- interactive process are killed
 
 ##psdock-ls
