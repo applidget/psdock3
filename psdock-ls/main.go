@@ -54,7 +54,6 @@ func visit(path string, fi os.FileInfo, err error) error {
 		return nil
 	}
 
-	fmt.Printf("Visited: %s\n", path)
 	f, err := os.Open(path)
 	if err != nil {
 		return err
