@@ -19,13 +19,17 @@ The path where the root file system of the container is created. The rootfs is a
 
 The environment to be used by the process. This flag can be specified multiple times
 
-#### cwd
+#### -cwd
 
 Current working directory of the process
 
-#### hostname
+#### -hostname
 
 Container hostname
+
+#### -user
+
+User to use inside the container
 
 #### -bind-mount
 

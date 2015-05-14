@@ -24,9 +24,7 @@ import (
 )
 
 const (
-	version             = "0.1"
-	libcontainerVersion = "b6cf7a6c8520fd21e75f8b3becec6dc355d844b0"
-
+	version        = "0.1"
 	containersRoot = "/var/run/psdock"
 )
 
@@ -38,15 +36,15 @@ var standardEnv = &cli.StringSlice{
 func main() {
 	app := cli.NewApp()
 	app.Name = "psdock"
-	app.Version = fmt.Sprintf("v%s (libcontainer %s)", version, libcontainerVersion)
+	app.Version = fmt.Sprintf("v%s", version)
 	app.Author = "Applidget"
-	app.Usage = "simple container engine specialized in PaaS"
+	app.Usage = "simple container engine"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{Name: "image, i", Usage: "container image"},
 		cli.StringFlag{Name: "rootfs, r", Usage: "container rootfs"},
-		cli.StringFlag{Name: "stdio", Usage: "standard input/output connection, if not specified, will use os stdin and stdout"},
+		cli.StringFlag{Name: "stdio", Usage: "standard input/output, if not specified, will use current stdin and stdout"},
 		cli.StringFlag{Name: "stdout-prefix", Usage: "add a prefix to container output lines (format: <prefix>:<color>)"},
-		cli.StringFlag{Name: "web-hook", Usage: "web hook to notify process status"},
+		cli.StringFlag{Name: "web-hook", Usage: "web hook to notify process status changes"},
 		cli.StringFlag{Name: "bind-port", Usage: "port the process is expected to bind"},
 		cli.StringFlag{Name: "user", Value: "root", Usage: "user inside container"},
 		cli.StringFlag{Name: "cwd", Usage: "set the current working dir"},
