@@ -1,11 +1,5 @@
 package logrotate
 
-//output are written to a file file_name, when starting, we need to
-// 1: watch if file file_name exists.
-// 2: if it exists, check for creation date and adjust future rotation + write output to this file
-// 3: when we need to rotate, add time stamp to the end of file_name, zip and start logging in a new file
-// 5: when creating a new file make sure there is no more the 5 gzipped file
-
 import (
 	"bufio"
 	"compress/gzip"
