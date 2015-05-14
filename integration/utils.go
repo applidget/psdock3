@@ -11,11 +11,7 @@ import (
 	"github.com/robinmonjo/psdock/notifier"
 )
 
-const imagePath = "/tmp/image"
-
-var serverRunning bool
-
-// integration expect to find a ubuntu rootfs in /tmp/image, other wise they won't be run
+// integration expect to find a ubuntu rootfs in /tmp/image, otherwise they won't be run
 func beforeTest(t *testing.T) {
 	if !fileExists(imagePath) {
 		fmt.Printf("skipping, ubuntu image not found in %s\n", imagePath)

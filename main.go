@@ -39,8 +39,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "psdock"
 	app.Version = fmt.Sprintf("v%s (libcontainer %s)", version, libcontainerVersion)
-	app.Author = "Robin Monjo"
-	app.Email = "robinmonjo@gmail.com"
+	app.Author = "Applidget"
 	app.Usage = "simple container engine specialized in PaaS"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{Name: "image, i", Usage: "container image"},

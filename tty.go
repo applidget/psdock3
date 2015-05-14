@@ -35,7 +35,7 @@ func (t *tty) Close() error {
 }
 
 func (t *tty) attach(s *stream.Stream) error {
-
+	// copy console output to stream's stdout
 	go func() {
 		io.Copy(s, t.console)
 		s.Close()
@@ -45,14 +45,29 @@ func (t *tty) attach(s *stream.Stream) error {
 		return nil
 	}
 
+	// copy stream's stdin into the console
 	go func() {
 		io.Copy(t.console, s)
 		s.Close()
 	}()
 
 	if s.Input == os.Stdin {
+		// the current terminal shall pass everything to the console, make it ignores ctrl+C etc ...
+		// this is done by making the terminal raw. The state is saved to reset user's terminal settings
+		// when psdock exits
 		state, err := term.SetRawTerminal(os.Stdin.Fd())
 		if err != nil {
+			return err
+		}
+		t.state = state
+	} else {
+		// s.Input is a socket (tcp, tls ...). Obvioulsy, we can't set the remote user's terminal in raw mode, however we can at least
+		// disable echo on the console
+		state, err := term.SaveState(t.console.Fd())
+		if err != nil {
+			return err
+		}
+		if err := term.DisableEcho(t.console.Fd(), state); err != nil {
 			return err
 		}
 		t.state = state

@@ -13,11 +13,16 @@ import (
 	"github.com/robinmonjo/psdock/notifier"
 )
 
+const (
+	imagePath  = "/tmp/image"
+	rootfsPath = "/tmp/test_psdock_rootfs"
+)
+
 func Test_simpleStart(t *testing.T) {
 	beforeTest(t)
 	fmt.Printf("testing simple start ... ")
 	b := newBinary()
-	err := b.start("-image", imagePath, "-rootfs", "/tmp/test_psdock_roo", "ls")
+	err := b.start("-image", imagePath, "-rootfs", rootfsPath, "ls")
 	if err != nil {
 		fmt.Println(b.debugInfo())
 		t.Fatal(err)
@@ -30,7 +35,7 @@ func Test_envAndHostname(t *testing.T) {
 	beforeTest(t)
 	fmt.Printf("setting env and hostname ... ")
 	b := newBinary()
-	err := b.start("-image", imagePath, "-rootfs", "/tmp/test_psdock_roo", "-env", "FOO=BAR", "-hostname", "foobar", "bash", "-c", "echo $FOO && hostname")
+	err := b.start("-image", imagePath, "-rootfs", rootfsPath, "-env", "FOO=BAR", "-hostname", "foobar", "bash", "-c", "echo $FOO && hostname")
 	if err != nil {
 		fmt.Println(b.debugInfo())
 		t.Fatal(err)
@@ -58,7 +63,7 @@ func Test_bindMount(t *testing.T) {
 
 	b := newBinary()
 	test := fmt.Sprintf("test -f %s", f.Name()) // exits 0 if exists, 1 otherwise
-	err = b.start("-image", imagePath, "-rootfs", "/tmp/test_psdock_roo", "-bind-mount", "/tmp:/tmp:ro", "bash", "-c", test)
+	err = b.start("-image", imagePath, "-rootfs", rootfsPath, "-bind-mount", "/tmp:/tmp:ro", "bash", "-c", test)
 	if err != nil {
 		fmt.Println(b.debugInfo())
 		t.Fatal(err)
@@ -85,7 +90,7 @@ func Test_webhook(t *testing.T) {
 	defer ts.Close()
 
 	b := newBinary()
-	err := b.start("-image", imagePath, "-rootfs", "/tmp/test_psdock_roo", "-web-hook", ts.URL, "ls")
+	err := b.start("-image", imagePath, "-rootfs", rootfsPath, "-web-hook", ts.URL, "ls")
 	if err != nil {
 		fmt.Println(b.debugInfo())
 		t.Fatal(err)
@@ -112,7 +117,7 @@ func Test_bindPort(t *testing.T) {
 
 	b := newBinary()
 	go func() {
-		err := b.start("-image", imagePath, "-rootfs", "/tmp/test_psdock_roo", "-web-hook", ts.URL, "-bind-port", "9778", "nc", "-l", "9778")
+		err := b.start("-image", imagePath, "-rootfs", rootfsPath, "-web-hook", ts.URL, "-bind-port", "9778", "nc", "-l", "9778")
 		if err != nil {
 			fmt.Println(b.debugInfo())
 			t.Fatal(err)
@@ -172,7 +177,7 @@ func Test_remoteStdio(t *testing.T) {
 
 	b := newBinary()
 	go func() {
-		if err := b.start("-image", imagePath, "-rootfs", "/tmp/test_psdock_roo", "-web-hook", ts.URL, "-stdio", "tcp://localhost:9999", "tail", "-f"); err != nil {
+		if err := b.start("-image", imagePath, "-rootfs", rootfsPath, "-web-hook", ts.URL, "-stdio", "tcp://localhost:9999", "tail", "-f"); err != nil {
 			fmt.Println(b.debugInfo())
 			t.Fatal(err)
 		}
