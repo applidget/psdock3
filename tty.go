@@ -6,9 +6,9 @@ import (
 	"io"
 	"os"
 
+	"github.com/applidget/psdock/stream"
 	"github.com/docker/docker/pkg/term"
 	"github.com/docker/libcontainer"
-	"github.com/robinmonjo/psdock/stream"
 )
 
 type tty struct {

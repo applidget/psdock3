@@ -33,6 +33,6 @@ clean:
 	rm -rf ./psdock ./release ./vendor/pkg
 
 vendor:
-	mkdir -p ./vendor/src/github.com/robinmonjo
-	ln -s `pwd` ./vendor/src/github.com/robinmonjo/
+	mkdir -p ./vendor/src/github.com/applidget
+	ln -s `pwd` ./vendor/src/github.com/applidget/
 	sh vendor.sh
