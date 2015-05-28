@@ -6,8 +6,8 @@ import (
 	"syscall"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/applidget/psdock/proc"
 	"github.com/docker/libcontainer"
-	"github.com/robinmonjo/psdock/proc"
 )
 
 type signalHandler struct {

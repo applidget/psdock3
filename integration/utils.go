@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/robinmonjo/psdock/notifier"
+	"github.com/applidget/psdock/notifier"
 )
 
 // integration expect to find a ubuntu rootfs in /tmp/image, otherwise they won't be run
