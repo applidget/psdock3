@@ -40,20 +40,32 @@ func Test_portBinder(t *testing.T) {
 func Test_isPortBoundFalse(t *testing.T) {
 	fmt.Printf("is port bound faillure ... ")
 	pids := []int{2344, 2445, 1}
-	bound, err := IsPortBound("9999", pids) // none of these pid should have bound the 9999 port
+
+	port, err := freePort()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bound, err := IsPortBound(port, pids) // none of these pid should have bound this port
 	if err != nil {
 		t.Fatal(err)
 	}
 	if bound {
-		t.Fatalf("port 9999 must not be reported as bound by one of these processes %v", pids)
+		t.Fatalf("port %s must not be reported as bound by one of these processes %v", port, pids)
 	}
 	fmt.Println("done")
 }
 
 func Test_isPortBoundTrue(t *testing.T) {
 	fmt.Printf("is port bound success ... ")
-	cmd := exec.Command("nc", "-l", "9999")
-	err := cmd.Start()
+
+	port, err := freePort()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := exec.Command("nc", "-l", port)
+	err = cmd.Start()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,12 +76,12 @@ func Test_isPortBoundTrue(t *testing.T) {
 	p, _ := strconv.Atoi(pid)
 
 	pids := []int{2344, 2445, 1, p, 890}
-	bound, err := IsPortBound("9999", pids)
+	bound, err := IsPortBound(port, pids)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !bound {
-		t.Fatalf("port 9999 should be reported has bound by %d", p)
+		t.Fatalf("port %s should be reported has bound by %d", port, p)
 	}
 	fmt.Println("done")
 }
