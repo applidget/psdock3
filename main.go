@@ -205,13 +205,6 @@ func start(c *cli.Context) (int, error) {
 		statusChanged(c, notifier.StatusRunning)
 	} else {
 		go func() {
-			//wait until we have a pid and until the port is bound
-			_, err := initProcessPid(container)
-			if err != nil {
-				log.Errorf("unable to get back container init process pid: %v", err)
-				return
-			}
-
 			port := c.String("bind-port")
 			for {
 				//
