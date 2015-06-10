@@ -19,8 +19,8 @@ import (
 	"github.com/applidget/psdock/fsdriver"
 	"github.com/applidget/psdock/logrotate"
 	"github.com/applidget/psdock/notifier"
-	"github.com/applidget/psdock/portwatcher"
 	"github.com/applidget/psdock/stream"
+	"github.com/applidget/psdock/system"
 )
 
 const (
@@ -206,17 +206,34 @@ func start(c *cli.Context) (int, error) {
 	} else {
 		go func() {
 			//wait until we have a pid and until the port is bound
-			pid, err := initProcessPid(container)
+			_, err := initProcessPid(container)
 			if err != nil {
 				log.Errorf("unable to get back container init process pid: %v", err)
 				return
 			}
+
 			port := c.String("bind-port")
-			if _, err := portwatcher.Watch(pid, port); err != nil {
-				log.Errorf("failed to watch port %s: %v", port, err)
-				return
+			for {
+				//
+				pids, err := container.Processes()
+				if err != nil {
+					log.Errorf("failed to get back container processes: %v", err)
+					// if this arise, we just do not change process status
+					return
+				}
+
+				bound, err := system.IsPortBound(port, pids)
+				if err != nil || !bound {
+					if err != nil {
+						log.Errorf("failed to check if port %s is bound: %v", port, err)
+					}
+					//will retry
+					time.Sleep(200 * time.Millisecond)
+				} else {
+					break
+				}
 			}
-			//at this point the process has bound the port
+
 			statusChanged(c, notifier.StatusRunning)
 		}()
 	}

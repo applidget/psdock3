@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -103,50 +104,6 @@ func Test_webhook(t *testing.T) {
 	fmt.Println("done")
 }
 
-func Test_bindPort(t *testing.T) {
-	beforeTest(t)
-	fmt.Printf("testing port binding ... ")
-
-	ch := make(chan notifier.PsStatus)
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
-		ch <- statusFromHookBody(r.Body, t)
-	}))
-	defer ts.Close()
-
-	b := newBinary()
-	go func() {
-		err := b.start("-image", imagePath, "-rootfs", rootfsPath, "-web-hook", ts.URL, "-bind-port", "9778", "nc", "-l", "9778")
-		if err != nil {
-			fmt.Println(b.debugInfo())
-			t.Fatal(err)
-		}
-	}()
-
-	status := <-ch
-	if status != notifier.StatusStarting {
-		t.Fatalf("expecting status %v got %v", notifier.StatusStarting, status)
-	}
-
-	status = <-ch
-	if status != notifier.StatusRunning {
-		t.Fatalf("expecting status %v got %v", notifier.StatusRunning, status)
-	}
-
-	if err := b.stop(); err != nil {
-		fmt.Println(b.debugInfo())
-		t.Fatal(err)
-	}
-
-	status = <-ch
-	if status != notifier.StatusCrashed {
-		t.Fatalf("expecting status %v got %v", notifier.StatusCrashed, status)
-	}
-
-	fmt.Println("done")
-}
-
 func Test_remoteStdio(t *testing.T) {
 	beforeTest(t)
 	fmt.Printf("testing remote stdio ... ")
@@ -200,5 +157,54 @@ func Test_remoteStdio(t *testing.T) {
 	if status != notifier.StatusCrashed {
 		t.Fatalf("expecting status %v got %v", notifier.StatusCrashed, status)
 	}
+	fmt.Println("done")
+}
+
+func Test_bindPort(t *testing.T) {
+	beforeTest(t)
+	fmt.Printf("testing port binding ... ")
+
+	ch := make(chan notifier.PsStatus)
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+		ch <- statusFromHookBody(r.Body, t)
+	}))
+	defer ts.Close()
+
+	b := newBinary()
+	go func() {
+		cwd, err := os.Getwd()
+		if err != nil {
+			t.Fatal(err)
+		}
+		bm := fmt.Sprintf("%s:/app", filepath.Join(cwd, "assets")) //bind mounting the asset inside the container
+		err = b.start("-image", imagePath, "-rootfs", rootfsPath, "-web-hook", ts.URL, "--bind-mount", bm, "-e", "PORT=7778", "-bind-port", "7778", "bash", "-c", "'/app/spawn.sh'")
+		if err != nil {
+			fmt.Println(b.debugInfo())
+			t.Fatal(err)
+		}
+	}()
+
+	status := <-ch
+	if status != notifier.StatusStarting {
+		t.Fatalf("expecting status %v got %v", notifier.StatusStarting, status)
+	}
+
+	status = <-ch
+	if status != notifier.StatusRunning {
+		t.Fatalf("expecting status %v got %v", notifier.StatusRunning, status)
+	}
+
+	if err := b.stop(); err != nil {
+		fmt.Println(b.debugInfo())
+		t.Fatal(err)
+	}
+
+	status = <-ch
+	if status != notifier.StatusCrashed {
+		t.Fatalf("expecting status %v got %v", notifier.StatusCrashed, status)
+	}
+
 	fmt.Println("done")
 }
