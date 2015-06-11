@@ -81,7 +81,7 @@ If given `-stdio` is a file, specifying `-log-rotate X` perform a log rotation e
 ##Dependencies
 
 - overlay (kernel 3.18 or over) (might work on older kernel with overlayfs, need to test)
-- `-bind-port` requires `pgrep` and `lsof` to be installed on the host
+- `-bind-port` requires `lsof` to be installed on the host
 - `cgroup-lites`
 
 ##psdock-ls
@@ -144,6 +144,6 @@ In the second case, obviously `psdock` do not have access to the remote terminal
 - handle limitation (memory / swap /cpu)
 - handle OOM notification with different strategies (restart / notify ...)
 - logging to syslog
-- remove pgrep and lsof dependencies (http://unix.stackexchange.com/questions/131101/without-using-network-command-lines-in-linux-how-to-know-list-of-open-ports-and)
+- remove lsof dependencies (http://unix.stackexchange.com/questions/131101/without-using-network-command-lines-in-linux-how-to-know-list-of-open-ports-and)
 - thoughts on network namespace (libnetwork looks very promising)
 - possibility to enter a running container ?

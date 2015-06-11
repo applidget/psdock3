@@ -4,6 +4,7 @@
 
 function launch_nc {
   # the pid that binds $PORT should be the grand son of this script pid
+  echo "spawning"
   nc -l $PORT
 }
 
