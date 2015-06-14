@@ -26,8 +26,8 @@ func Test_overlay(t *testing.T) {
 		}
 
 		rootfs := path.Join(os.TempDir(), "rootfs_psdock_test")
-		o, err := NewOverlay(image, rootfs)
-		if err != nil {
+		o := &overlay{}
+		if err := o.Init(image, rootfs); err != nil {
 			t.Fatal(err)
 		}
 
@@ -37,7 +37,7 @@ func Test_overlay(t *testing.T) {
 		defer o.CleanupRootfs()
 
 		//check rootfs is the same as image
-		mountedDirectories, err := ioutil.ReadDir(o.upperDir)
+		mountedDirectories, _ := ioutil.ReadDir(o.upperDir)
 		if len(mountedDirectories) != len(directories) {
 			t.Fatalf("%d mounted directories expected %d", len(mountedDirectories), len(directories))
 		}

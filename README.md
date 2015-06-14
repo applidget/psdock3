@@ -132,11 +132,10 @@ In the second case, obviously `psdock` do not have access to the remote terminal
 
 ####Short term
 
+- driver for aufs and driver picking
 - force kill delay (add an option to force kill the child process after some times if it didn't responds to a sigterm or sigint: killing psdock will make it's child process an orphan, we want to avoid this)
 - try it with upstart
-- try with overlayfs
-- overlayfs hide the "work" directory
-- driver for aufs and driver picking
+- overlay hide the "work" directory
 
 ####Medium term
 

@@ -101,15 +101,15 @@ func start(c *cli.Context) (int, error) {
 	}
 	rootfs = path.Clean(rootfs)
 
-	overlay, err := fsdriver.NewOverlay(image, rootfs)
+	driver, err := fsdriver.New(image, rootfs)
 	if err != nil {
 		return 1, err
 	}
 
-	if err := overlay.SetupRootfs(); err != nil {
+	if err := driver.SetupRootfs(); err != nil {
 		return 1, err
 	}
-	defer overlay.CleanupRootfs()
+	defer driver.CleanupRootfs()
 
 	// create container factory
 	bin, _ := filepath.Abs(os.Args[0])
