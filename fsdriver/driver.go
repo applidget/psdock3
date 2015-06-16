@@ -30,7 +30,7 @@ func New(image, rootfs string) (Driver, error) {
 		v := reflect.New(driverRegistry[name])
 		d, ok := v.Interface().(Driver)
 		if !ok {
-			return nil, fmt.Errorf("%s driver doesn't seem to implement the psdock.Driver interface")
+			return nil, fmt.Errorf("%s driver doesn't seem to implement the fsdriver.Driver interface")
 		}
 
 		if err := d.Init(image, rootfs); err == nil {
