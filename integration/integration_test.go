@@ -178,6 +178,7 @@ func Test_bindPort(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		bm := fmt.Sprintf("%s:/app", filepath.Join(cwd, "assets")) //bind mounting the asset inside the container
 		err = b.start("-image", imagePath, "-rootfs", rootfsPath, "-web-hook", ts.URL, "-bind-mount", bm, "-e", "PORT=7778", "-bind-port", "7778", "bash", "-c", "'/app/spawn.sh'")
 		if err != nil {

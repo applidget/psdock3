@@ -201,6 +201,11 @@ func start(c *cli.Context) (int, error) {
 	statusChanged(c, notifier.StatusStarting)
 	defer statusChanged(c, notifier.StatusCrashed)
 
+	// start the container
+	if err := container.Start(process); err != nil {
+		return 1, err
+	}
+
 	if c.String("bind-port") == "" {
 		statusChanged(c, notifier.StatusRunning)
 	} else {
@@ -229,11 +234,6 @@ func start(c *cli.Context) (int, error) {
 
 			statusChanged(c, notifier.StatusRunning)
 		}()
-	}
-
-	// start the container
-	if err := container.Start(process); err != nil {
-		return 1, err
 	}
 
 	// container exited
