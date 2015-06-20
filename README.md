@@ -80,7 +80,7 @@ If given `-stdio` is a file, specifying `-log-rotate X` perform a log rotation e
 
 ##Dependencies
 
-- overlay (kernel 3.18 or over) (might work on older kernel with overlayfs, need to test)
+- overlay (mainstream since 3.18) or aufs
 - `-bind-port` requires `lsof` to be installed on the host
 - `cgroup-lites`
 
@@ -101,6 +101,7 @@ If given `-stdio` is a file, specifying `-log-rotate X` perform a log rotation e
 
 - all running `psdock` containers info will be in `/var/run/psdock/*`. `psdock-ls` is here to help
 - `rootfs` are ephemerals, when the process stop, they are destroyed
+- `psdock` will use `overlay` or `aufs` (in this order) to create the rootfs from the image. So if `overlay` is not available on the host it will try `aufs`
 - `images` are immutable, there is no elegant way to create a new one so far. To do it you can spawn bash into `psdock` with the image you want to modify, make changes, and then `cp -r`  the rootfs directory before exiting from bash.
 - to get images you can use [krgo](https://github.com/robinmonjo/krgo) that will give you access to images on the dockerhub (or patiently wait for [this](https://github.com/docker/distribution/tree/master/cmd/dist) to be ready)
 
@@ -132,9 +133,7 @@ In the second case, obviously `psdock` do not have access to the remote terminal
 
 ####Short term
 
-- driver for aufs and driver picking
 - force kill delay (add an option to force kill the child process after some times if it didn't responds to a sigterm or sigint: killing psdock will make it's child process an orphan, we want to avoid this)
-- try it with upstart
 - overlay hide the "work" directory
 
 ####Medium term

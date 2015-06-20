@@ -112,7 +112,11 @@ func start(c *cli.Context) (int, error) {
 	defer driver.CleanupRootfs()
 
 	// create container factory
-	bin, _ := filepath.Abs(os.Args[0])
+	bin, err := exec.LookPath("psdock")
+	if err != nil {
+		//psdock not in the path
+		bin, _ = filepath.Abs(os.Args[0])
+	}
 	factory, err := libcontainer.New(containersRoot, libcontainer.InitArgs(bin, "init"), libcontainer.Cgroupfs)
 	if err != nil {
 		return 1, err
