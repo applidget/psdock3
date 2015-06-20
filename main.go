@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	version        = "0.1"
+	version        = "1.0"
 	containersRoot = "/var/run/psdock"
 )
 
