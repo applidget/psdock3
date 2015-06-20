@@ -6,7 +6,7 @@ import (
 	"syscall"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/applidget/psdock/proc"
+	"github.com/applidget/psdock/system"
 	"github.com/docker/libcontainer"
 )
 
@@ -55,7 +55,7 @@ func (h *signalHandler) handleInterupt(sig os.Signal) error {
 		return h.handleDefault(sig)
 	}
 
-	ps, err := proc.NewProcStatus(pid)
+	ps, err := system.NewProcStatus(pid)
 	if err != nil {
 		log.Error(err)
 		//failed to get process status, fallback

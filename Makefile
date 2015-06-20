@@ -14,10 +14,9 @@ integration-test:
 
 test:
 	GOPATH=$(GOPATH) bash -c 'cd logrotate && go test -cover'
-	GOPATH=$(GOPATH) bash -c 'cd system && go test -cover'
 	GOPATH=$(GOPATH) bash -c 'cd stream && go test -cover'
 	sudo GOPATH=$(GOPATH) bash -c 'cd fsdriver && $(GO) test -cover'
-	sudo PATH=$(PATH):`pwd` GOPATH=$(GOPATH) bash -c 'cd proc && $(GO) test -cover'
+	sudo PATH=$(PATH):`pwd` GOPATH=$(GOPATH) bash -c 'cd system && $(GO) test -cover'
 	sudo GO_ENV=testing PATH=$(PATH):`pwd` GOPATH=$(GOPATH) bash -c 'cd integration && $(GO) test'
 
 release:

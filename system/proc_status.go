@@ -1,4 +1,4 @@
-package proc
+package system
 
 import (
 	"encoding/csv"
@@ -9,8 +9,6 @@ import (
 	"strings"
 	"syscall"
 )
-
-//
 
 type ProcStatus struct {
 	Pid    string           //pid of the process
