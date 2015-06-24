@@ -190,7 +190,7 @@ func start(c *cli.Context) (int, error) {
 	}
 
 	// forward received signals to container process
-	signalHandler := &signalHandler{container: container, process: process, tty: tty}
+	signalHandler := &signalHandler{process: process, tty: tty}
 	go signalHandler.startCatching()
 
 	if s.Interactive() {
