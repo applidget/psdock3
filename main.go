@@ -24,14 +24,16 @@ import (
 )
 
 const (
-	version        = "1.0"
 	containersRoot = "/var/run/psdock"
 )
 
-var standardEnv = &cli.StringSlice{
-	"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-	"TERM=xterm",
-}
+var (
+	version     string // this variable is populated by the makefile
+	standardEnv = &cli.StringSlice{
+		"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+		"TERM=xterm",
+	}
+)
 
 func main() {
 	app := cli.NewApp()
