@@ -37,7 +37,7 @@ clone() {
 	echo done
 }
 
-clone git github.com/docker/libcontainer v2.1.1
+clone git github.com/docker/libcontainer v2.2.1
 clone git github.com/codegangsta/cli v1.2.0
 clone git github.com/Sirupsen/logrus v0.8.2
-clone git github.com/docker/docker v1.6.2
+clone git github.com/docker/docker v1.7.0

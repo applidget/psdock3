@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	version        = "0.1"
+	version        = "1.0"
 	containersRoot = "/var/run/psdock"
 )
 
@@ -101,18 +101,22 @@ func start(c *cli.Context) (int, error) {
 	}
 	rootfs = path.Clean(rootfs)
 
-	overlay, err := fsdriver.NewOverlay(image, rootfs)
+	driver, err := fsdriver.New(image, rootfs)
 	if err != nil {
 		return 1, err
 	}
 
-	if err := overlay.SetupRootfs(); err != nil {
+	if err := driver.SetupRootfs(); err != nil {
 		return 1, err
 	}
-	defer overlay.CleanupRootfs()
+	defer driver.CleanupRootfs()
 
 	// create container factory
-	bin, _ := filepath.Abs(os.Args[0])
+	bin, err := exec.LookPath("psdock")
+	if err != nil {
+		//psdock not in the path
+		bin, _ = filepath.Abs(os.Args[0])
+	}
 	factory, err := libcontainer.New(containersRoot, libcontainer.InitArgs(bin, "init"), libcontainer.Cgroupfs)
 	if err != nil {
 		return 1, err
@@ -186,7 +190,7 @@ func start(c *cli.Context) (int, error) {
 	}
 
 	// forward received signals to container process
-	signalHandler := &signalHandler{container: container, process: process, tty: tty}
+	signalHandler := &signalHandler{process: process, tty: tty}
 	go signalHandler.startCatching()
 
 	if s.Interactive() {
@@ -200,6 +204,11 @@ func start(c *cli.Context) (int, error) {
 	// start container process
 	statusChanged(c, notifier.StatusStarting)
 	defer statusChanged(c, notifier.StatusCrashed)
+
+	// start the container
+	if err := container.Start(process); err != nil {
+		return 1, err
+	}
 
 	if c.String("bind-port") == "" {
 		statusChanged(c, notifier.StatusRunning)
@@ -229,11 +238,6 @@ func start(c *cli.Context) (int, error) {
 
 			statusChanged(c, notifier.StatusRunning)
 		}()
-	}
-
-	// start the container
-	if err := container.Start(process); err != nil {
-		return 1, err
 	}
 
 	// container exited

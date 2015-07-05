@@ -1,4 +1,4 @@
-package proc
+package system
 
 import (
 	"fmt"
@@ -55,7 +55,7 @@ func Test_procInfo(t *testing.T) {
 
 	wg.Wait()
 
-	pid := fmt.Sprintf("%d", cmd.Process.Pid)
+	pid := cmd.Process.Pid
 	defer cmd.Process.Kill()
 
 	ps, err := NewProcStatus(pid)
@@ -85,7 +85,7 @@ func Test_procInfo(t *testing.T) {
 
 func Test_procInfoOnInit(t *testing.T) {
 	fmt.Printf("process info on init ... ")
-	ps, err := NewProcStatus("1")
+	ps, err := NewProcStatus(1)
 	if err != nil {
 		t.Fatal(err)
 	}

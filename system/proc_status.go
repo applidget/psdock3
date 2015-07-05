@@ -1,4 +1,4 @@
-package proc
+package system
 
 import (
 	"encoding/csv"
@@ -10,18 +10,16 @@ import (
 	"syscall"
 )
 
-//
-
 type ProcStatus struct {
-	Pid    string           //pid of the process
+	Pid    int              //pid of the process
 	SigBlk []syscall.Signal //signals blocked by the process
 	SigIgn []syscall.Signal //signals ignored by the process
 	SigCgt []syscall.Signal //signals caught by the process
 }
 
-func NewProcStatus(pid string) (*ProcStatus, error) {
+func NewProcStatus(pid int) (*ProcStatus, error) {
 	//fill the ProcStatus struct from /proc/pid/status
-	statusFile, err := os.Open(fmt.Sprintf("/proc/%s/status", pid))
+	statusFile, err := os.Open(fmt.Sprintf("/proc/%d/status", pid))
 	if err != nil {
 		return nil, err
 	}

@@ -1,34 +1,34 @@
 package fsdriver
 
 import (
-	"bufio"
 	"fmt"
 	"os"
-	"os/exec"
+	"reflect"
 	"syscall"
 )
 
-// Driver create a usable rootfs from an imutable image directory
-type Driver interface {
-	SetupRootfs() error
-	CleanupRootfs() error
+func init() {
+	register("overlay", reflect.TypeOf(overlay{}))
 }
 
-type Overlay struct {
+type overlay struct {
 	lowerDir string
 	upperDir string
 	workDir  string
 }
 
-func NewOverlay(image, dest string) (*Overlay, error) {
-	if err := supportsOverlay(); err != nil {
-		return nil, err
+func (o *overlay) Init(image, dest string) error {
+	if err := supports("overlay"); err != nil {
+		return err
 	}
-	workDir := fmt.Sprintf("%s_work", dest)
-	return &Overlay{lowerDir: image, upperDir: dest, workDir: workDir}, nil
+	o.lowerDir = image
+	o.upperDir = dest
+	o.workDir = fmt.Sprintf("%s_work", dest)
+
+	return nil
 }
 
-func (o *Overlay) SetupRootfs() error {
+func (o *overlay) SetupRootfs() error {
 	//mount image in readonly into dest
 	if err := os.MkdirAll(o.upperDir, 0700); err != nil {
 		return err
@@ -40,7 +40,7 @@ func (o *Overlay) SetupRootfs() error {
 	return syscall.Mount("overlay", o.upperDir, "overlay", 0, opts)
 }
 
-func (o *Overlay) CleanupRootfs() error {
+func (o *overlay) CleanupRootfs() error {
 	if err := syscall.Unmount(o.upperDir, 0); err != nil {
 		return err
 	}
@@ -48,22 +48,4 @@ func (o *Overlay) CleanupRootfs() error {
 		return err
 	}
 	return os.RemoveAll(o.workDir)
-}
-
-func supportsOverlay() error {
-	exec.Command("modprobe", "overlay").Run()
-
-	f, err := os.Open("/proc/filesystems")
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	s := bufio.NewScanner(f)
-	for s.Scan() {
-		if s.Text() == "nodev\toverlay" {
-			return nil
-		}
-	}
-	return fmt.Errorf("overlay mount not supported")
 }

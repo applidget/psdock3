@@ -6,19 +6,20 @@ import (
 	"syscall"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/applidget/psdock/proc"
+	"github.com/applidget/psdock/system"
 	"github.com/docker/libcontainer"
 )
 
+const signalBufferSize = 2048
+
 type signalHandler struct {
-	container   libcontainer.Container
 	process     *libcontainer.Process
 	tty         *tty
 	forceKilled bool
 }
 
 func (h *signalHandler) startCatching() {
-	sigc := make(chan os.Signal, 10)
+	sigc := make(chan os.Signal, signalBufferSize)
 	signal.Notify(sigc)
 
 	for sig := range sigc {
@@ -49,13 +50,13 @@ func (h *signalHandler) handleInterupt(sig os.Signal) error {
 	// just forward the signal
 
 	// if sigint or sigterm, check if the signal can caught them, if yes, send it otherwise kill the process (SIGSTOP and SIGKILL can't be caught)
-	pid, err := initProcessPid(h.container)
+	pid, err := h.process.Pid()
 	if err != nil {
 		//couldn't get pid, fallabck (probably the process died, already, anyway falling back to default)
 		return h.handleDefault(sig)
 	}
 
-	ps, err := proc.NewProcStatus(pid)
+	ps, err := system.NewProcStatus(pid)
 	if err != nil {
 		log.Error(err)
 		//failed to get process status, fallback
