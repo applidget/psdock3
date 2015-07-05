@@ -1,6 +1,6 @@
 package main
 
-//totally inspired by https://github.com/opencontainers/runc/libcontainer/blob/master/nsinit/tty.go
+//have a look at https://github.com/opencontainers/runc/blob/master/tty.go for idiomatic implementation
 
 import (
 	"io"
