@@ -13,8 +13,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
-	"github.com/docker/libcontainer"
-	"github.com/docker/libcontainer/utils"
+	"github.com/opencontainers/runc/libcontainer"
+	"github.com/opencontainers/runc/libcontainer/utils"
 
 	"github.com/applidget/psdock/fsdriver"
 	"github.com/applidget/psdock/logrotate"

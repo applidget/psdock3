@@ -1,5 +1,6 @@
 GOPATH:=`pwd`/vendor:$(GOPATH)
-GOPATH:=$(GOPATH):`pwd`/vendor/src/github.com/docker/libcontainer/vendor
+GOPATH:=$(GOPATH):`pwd`/vendor/src/github.com/opencontainers/runc/libcontainer/
+GOPATH:=$(GOPATH):`pwd`/vendor/src/github.com/opencontainers/runc/Godeps/_workspace
 GO:=$(shell which go)
 VERSION:=0.1
 HARDWARE=$(shell uname -m)

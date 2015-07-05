@@ -5,7 +5,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/docker/libcontainer/configs"
+	"github.com/opencontainers/runc/libcontainer/configs"
 )
 
 const defaultMountFlags = syscall.MS_NOEXEC | syscall.MS_NOSUID | syscall.MS_NODEV
