@@ -10,7 +10,6 @@ import (
 
 // check wether the given port is bound by one of the given pids
 func IsPortBound(port string, pids []int) (bool, error) {
-	//wait until port is binded by pid or one of its children
 	for _, pid := range pids {
 		binderPid, err := portBinder(port)
 		if err != nil {

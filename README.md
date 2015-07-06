@@ -1,7 +1,7 @@
 
 #psdock
 
-`psdock` is a "daemon-less" process supervisor and monitoring tool for linux. It uses [docker/libcontainer](https://github.com/docker/libcontainer) to isolate processes inside linux container.
+`psdock` is a "daemon-less" process supervisor and monitoring tool for linux. It uses [libcontainer](https://github.com/opencontainers/runc/tree/master/libcontainer) to isolate processes inside linux container.
 
 ##usage
 

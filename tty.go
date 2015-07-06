@@ -1,6 +1,6 @@
 package main
 
-//totally inspired by https://github.com/docker/libcontainer/blob/master/nsinit/tty.go
+//have a look at https://github.com/opencontainers/runc/blob/master/tty.go for idiomatic implementation
 
 import (
 	"io"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/applidget/psdock/stream"
 	"github.com/docker/docker/pkg/term"
-	"github.com/docker/libcontainer"
+	"github.com/opencontainers/runc/libcontainer"
 )
 
 type tty struct {

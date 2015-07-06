@@ -13,8 +13,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
-	"github.com/docker/libcontainer"
-	"github.com/docker/libcontainer/utils"
+	"github.com/opencontainers/runc/libcontainer"
+	"github.com/opencontainers/runc/libcontainer/utils"
 
 	"github.com/applidget/psdock/fsdriver"
 	"github.com/applidget/psdock/logrotate"
@@ -24,14 +24,16 @@ import (
 )
 
 const (
-	version        = "1.0"
 	containersRoot = "/var/run/psdock"
 )
 
-var standardEnv = &cli.StringSlice{
-	"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-	"TERM=xterm",
-}
+var (
+	version     string // this variable is populated by the makefile
+	standardEnv = &cli.StringSlice{
+		"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+		"TERM=xterm",
+	}
+)
 
 func main() {
 	app := cli.NewApp()

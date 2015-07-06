@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"text/tabwriter"
 
-	"github.com/docker/libcontainer"
+	"github.com/opencontainers/runc/libcontainer"
 )
 
 const (

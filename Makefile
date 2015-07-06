@@ -1,15 +1,16 @@
 GOPATH:=`pwd`/vendor:$(GOPATH)
-GOPATH:=$(GOPATH):`pwd`/vendor/src/github.com/docker/libcontainer/vendor
+GOPATH:=$(GOPATH):`pwd`/vendor/src/github.com/opencontainers/runc/libcontainer/
+GOPATH:=$(GOPATH):`pwd`/vendor/src/github.com/opencontainers/runc/Godeps/_workspace
 GO:=$(shell which go)
-VERSION:=0.1
+VERSION:=1.0
 HARDWARE=$(shell uname -m)
 
 build: vendor
-	GOPATH=$(GOPATH) go build
+	GOPATH=$(GOPATH) go build -ldflags="-X main.version $(VERSION)"
 	GOPATH=$(GOPATH) bash -c 'cd psdock-ls && go build'
 
 integration-test:
-	GOPATH=$(GOPATH) go build
+	GOPATH=$(GOPATH) go build -ldflags="-X main.version $(VERSION)"
 	sudo PATH=$(PATH):`pwd` GOPATH=$(GOPATH) $(GO) test
 
 test:
@@ -22,7 +23,7 @@ test:
 release:
 	#psdock
 	mkdir -p release
-	GOPATH=$(GOPATH) GOOS=linux go build -o release/psdock
+	GOPATH=$(GOPATH) GOOS=linux go build -ldflags="-X main.version $(VERSION)" -o release/psdock
 	cd release && tar -zcf psdock-v$(VERSION)_$(HARDWARE).tgz psdock
 	rm release/psdock
 
