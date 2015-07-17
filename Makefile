@@ -28,6 +28,9 @@ release:
 	rm release/psdock
 
 	#psdock-ls
+	GOPATH=$(GOPATH) GOOS=linux bash -c 'cd psdock-ls && go build -o ../release/psdock-ls'
+	cd release && tar -zcf psdock-ls-v$(VERSION)_$(HARDWARE).tgz psdock-ls
+	rm release/psdock-ls
 
 clean:
 	rm -rf ./psdock ./release ./vendor/pkg
