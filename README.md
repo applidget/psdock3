@@ -29,7 +29,7 @@ Container hostname
 
 #### -user
 
-User to use inside the container
+User to use inside the container. TODO: autocreate the user in the container if it doesn't exists. See what kind of user we should create + chown properly thing (for example if the HOME env is set and the user is set $HOME should be owned by the user, if bind mounts as specified, should be accessible as well etc ...)
 
 #### -bind-mount
 
