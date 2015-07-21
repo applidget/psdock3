@@ -37,6 +37,6 @@ clone() {
 	echo done
 }
 
-clone git github.com/opencontainers/runc
+clone git github.com/opencontainers/runc v0.0.2
 clone git github.com/codegangsta/cli v1.2.0
 clone git github.com/Sirupsen/logrus v0.8.2
