@@ -31,7 +31,7 @@ func (a *aufs) SetupRootfs() error {
 	if err := os.MkdirAll(a.upperDir, 0700); err != nil {
 		return err
 	}
-	opts := fmt.Sprintf("br=%s=rw:%s=ro", a.lowerDir, a.upperDir)
+	opts := fmt.Sprintf("br=%s=rw:%s=ro", a.upperDir, a.lowerDir)
 	return syscall.Mount("aufs", a.upperDir, "aufs", 0, opts)
 }
 
