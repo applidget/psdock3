@@ -30,7 +30,7 @@ func (o *overlay) Init(image, dest string) error {
 
 func (o *overlay) SetupRootfs() error {
 	//mount image in readonly into dest
-	if err := os.MkdirAll(o.upperDir, 0700); err != nil {
+	if err := os.MkdirAll(o.upperDir, 0755); err != nil { // rootfs MUST be with x permission otherwise user switching may fail
 		return err
 	}
 	if err := os.MkdirAll(o.workDir, 0700); err != nil {

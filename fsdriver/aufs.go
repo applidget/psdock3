@@ -28,7 +28,7 @@ func (a *aufs) Init(image, dest string) error {
 
 func (a *aufs) SetupRootfs() error {
 	//mount image in readonly into dest
-	if err := os.MkdirAll(a.upperDir, 0700); err != nil {
+	if err := os.MkdirAll(a.upperDir, 0755); err != nil {
 		return err
 	}
 	opts := fmt.Sprintf("br=%s=rw:%s=ro", a.upperDir, a.lowerDir)

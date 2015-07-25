@@ -209,3 +209,31 @@ func Test_bindPort(t *testing.T) {
 
 	fmt.Println("done")
 }
+
+// making sure we can switch user inside container (may not be the case if the rootfs is not +x)
+func Test_changeUser(t *testing.T) {
+	beforeTest(t)
+	fmt.Printf("testing user switching ... ")
+
+	b := newBinary()
+
+	script := `
+	addgroup --quiet --gid 7999 u7999 &&
+	adduser --shell /bin/bash --disabled-password --force-badname --no-create-home --uid 7999 --gid 7999 --gecos '' --quiet  u7999 &&
+	su -c whoami - u7999
+	`
+
+	err := b.start("-image", imagePath, "-rootfs", rootfsPath, "bash", "-c", script)
+	if err != nil {
+		fmt.Println(b.debugInfo())
+		t.Fatal(err)
+	}
+
+	cleanStdout := strings.Trim(string(b.stdout), "\n")
+	whoami := cleanStdout[len(cleanStdout)-5 : len(cleanStdout)]
+	if whoami != "u7999" {
+		t.Fatalf("expected output to be u7999, got %q", whoami)
+	}
+
+	fmt.Println("done")
+}

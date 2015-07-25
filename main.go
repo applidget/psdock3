@@ -97,7 +97,7 @@ func start(c *cli.Context) (int, error) {
 	}
 	image = path.Clean(image)
 
-	rootfs := c.String("rootfs")
+	rootfs, _ := filepath.Abs(c.String("rootfs"))
 	if rootfs == "" {
 		return 1, fmt.Errorf("no rootfs specified")
 	}

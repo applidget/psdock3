@@ -20,6 +20,12 @@ test:
 	sudo PATH=$(PATH):`pwd` GOPATH=$(GOPATH) bash -c 'cd system && $(GO) test -cover'
 	sudo GO_ENV=testing PATH=$(PATH):`pwd` GOPATH=$(GOPATH) bash -c 'cd integration && $(GO) test'
 
+install:
+	sudo rm -rf /usr/local/bin/psdock
+	sudo rm -rf /usr/local/bin/psdock-ls
+	sudo cp psdock /usr/local/bin
+	sudo cp psdock-ls/psdock-ls /usr/local/bin
+
 release:
 	#psdock
 	mkdir -p release
