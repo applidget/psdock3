@@ -3,6 +3,7 @@ package fsdriver
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"syscall"
 )
@@ -23,7 +24,8 @@ func (o *overlay) Init(image, dest string) error {
 	}
 	o.lowerDir = image
 	o.upperDir = dest
-	o.workDir = fmt.Sprintf("%s_work", dest)
+	workDirName := fmt.Sprintf(".%s_work", filepath.Base(dest))
+	o.workDir = filepath.Join(filepath.Dir(dest), workDirName)
 
 	return nil
 }

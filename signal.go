@@ -52,23 +52,23 @@ func (h *signalHandler) handleInterupt(sig os.Signal) error {
 	// if sigint or sigterm, check if the signal can caught them, if yes, send it otherwise kill the process (SIGSTOP and SIGKILL can't be caught)
 	pid, err := h.process.Pid()
 	if err != nil {
-		//couldn't get pid, fallabck (probably the process died, already, anyway falling back to default)
+		//couldn't get pid, fallback (probably the process died, already, anyway falling back to default)
 		return h.handleDefault(sig)
 	}
 
 	ps, err := system.NewProcStatus(pid)
 	if err != nil {
-		log.Error(err)
-		//failed to get process status, fallback
+		if !os.IsNotExist(err) {
+			//real error here, logging out
+			log.Error(err)
+		}
 		return h.handleDefault(sig)
 	}
 
 	if ps.SignalCaught(sig.(syscall.Signal)) {
-		log.Infof("signal is caught so let the thing handle it: %v", sig)
 		return h.handleDefault(sig)
 	}
 
-	log.Infof("signal is not caught, killing: %v", sig)
 	h.forceKilled = true
 	return h.process.Signal(syscall.SIGKILL)
 }
