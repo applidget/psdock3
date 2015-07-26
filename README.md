@@ -29,7 +29,7 @@ Container hostname
 
 #### -user, -u
 
-User to use inside the container. TODO: autocreate the user in the container if it doesn't exists. See what kind of user we should create + chown properly thing (for example if the HOME env is set and the user is set $HOME should be owned by the user, if bind mounts as specified, should be accessible as well etc ...)
+User to use inside the container
 
 #### -bind-mount
 
@@ -80,7 +80,7 @@ If given `-stdio` is a file, specifying `-log-rotate X` perform a log rotation e
 
 #### -kill-timeout
 
-Timeout in seconds that will trigger a sigkill on the process if it's still running after receiving a sigterm or sigint. This may be interesting for processes that caught these signals but do not process them in a reasonable delay
+Timeout in seconds that will trigger a sigkill on the process if it's still running after receiving a sigterm or sigint. This may be interesting for processes that caught these signals but do not process them in a reasonable delay. If not set or set to 0 no sigkill will be sent
 
 ##Dependencies
 
@@ -134,10 +134,6 @@ In the second case, obviously `psdock` do not have access to the remote terminal
 
 
 ##Roadmap
-
-####Short term
-
-- force kill delay (add an option to force kill the child process after some times if it didn't responds to a sigterm or sigint: killing psdock will make it's child process an orphan, we want to avoid this)
 
 ####Medium term
 
