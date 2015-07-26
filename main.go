@@ -48,12 +48,13 @@ func main() {
 		cli.StringFlag{Name: "stdout-prefix", Usage: "add a prefix to container output lines (format: <prefix>:<color>)"},
 		cli.StringFlag{Name: "web-hook", Usage: "web hook to notify process status changes"},
 		cli.StringFlag{Name: "bind-port", Usage: "port the process is expected to bind"},
-		cli.StringFlag{Name: "user", Value: "root", Usage: "user inside container"},
+		cli.StringFlag{Name: "user, u", Value: "root", Usage: "user inside container"},
 		cli.StringFlag{Name: "cwd", Usage: "set the current working dir"},
 		cli.StringFlag{Name: "hostname", Value: "psdock", Usage: "set the container hostname"},
 		cli.StringSliceFlag{Name: "env, e", Value: standardEnv, Usage: "set environment variables for the process"},
 		cli.StringSliceFlag{Name: "bind-mount", Value: &cli.StringSlice{}, Usage: "set bind mounts"},
 		cli.IntFlag{Name: "log-rotate", Usage: "rotate stdout output (if stdio is a proper file)"},
+		cli.IntFlag{Name: "kill-timeout", Usage: "kill the process after timeout after receiving a SIGINT or SIGTERM"},
 	}
 	app.Commands = []cli.Command{
 		cli.Command{
@@ -192,7 +193,7 @@ func start(c *cli.Context) (int, error) {
 	}
 
 	// forward received signals to container process
-	signalHandler := &signalHandler{process: process, tty: tty}
+	signalHandler := &signalHandler{process: process, tty: tty, killTimeout: c.Int("kill-timeout")}
 	go signalHandler.startCatching()
 
 	if s.Interactive() {

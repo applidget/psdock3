@@ -27,7 +27,7 @@ Current working directory of the process
 
 Container hostname
 
-#### -user
+#### -user, -u
 
 User to use inside the container. TODO: autocreate the user in the container if it doesn't exists. See what kind of user we should create + chown properly thing (for example if the HOME env is set and the user is set $HOME should be owned by the user, if bind mounts as specified, should be accessible as well etc ...)
 
@@ -77,6 +77,10 @@ If given `-stdio` is a file, specifying `-log-rotate X` perform a log rotation e
 - archive (gzip) the current log file by prepending a timestamp
 - empty the current log file
 - keep at most 5 log archives
+
+#### -kill-timeout
+
+Timeout in seconds that will trigger a sigkill on the process if it's still running after receiving a sigterm or sigint. This may be interesting for processes that caught these signals but do not process them in a reasonable delay
 
 ##Dependencies
 

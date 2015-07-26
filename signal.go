@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/applidget/psdock/system"
@@ -16,6 +17,7 @@ type signalHandler struct {
 	process     *libcontainer.Process
 	tty         *tty
 	forceKilled bool
+	killTimeout int // timeout in seconds
 }
 
 func (h *signalHandler) startCatching() {
@@ -54,6 +56,14 @@ func (h *signalHandler) handleInterupt(sig os.Signal) error {
 	if err != nil {
 		//couldn't get pid, fallback (probably the process died, already, anyway falling back to default)
 		return h.handleDefault(sig)
+	}
+
+	if h.killTimeout > 0 {
+		go func() {
+			<-time.After(time.Duration(h.killTimeout) * time.Second)
+			h.forceKilled = true
+			h.process.Signal(syscall.SIGKILL)
+		}()
 	}
 
 	ps, err := system.NewProcStatus(pid)
