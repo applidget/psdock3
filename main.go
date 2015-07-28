@@ -54,7 +54,7 @@ func main() {
 		cli.StringSliceFlag{Name: "env, e", Value: standardEnv, Usage: "set environment variables for the process"},
 		cli.StringSliceFlag{Name: "bind-mount", Value: &cli.StringSlice{}, Usage: "set bind mounts"},
 		cli.IntFlag{Name: "log-rotate", Usage: "rotate stdout output (if stdio is a proper file)"},
-		cli.IntFlag{Name: "kill-timeout", Usage: "kill the process after timeout after receiving a SIGINT or SIGTERM"},
+		cli.IntFlag{Name: "kill-timeout", Value: -1, Usage: "kill the process after timeout after receiving a SIGINT or SIGTERM"},
 	}
 	app.Commands = []cli.Command{
 		cli.Command{

@@ -74,13 +74,13 @@ Dependent option: `-stdio file://*`
 
 If given `-stdio` is a file, specifying `-log-rotate X` perform a log rotation every X hours that:
 
-- archive (gzip) the current log file by prepending a timestamp
+- archive (gzip) the current log file by prepending a timestamp (in the log file directory)
 - empty the current log file
 - keep at most 5 log archives
 
 #### -kill-timeout
 
-Timeout in seconds that will trigger a sigkill on the process if it's still running after receiving a sigterm or sigint. This may be interesting for processes that caught these signals but do not process them in a reasonable delay. If not set or set to 0 no sigkill will be sent
+Timeout in seconds that will trigger a sigkill on the process if it's still running after receiving a sigterm or sigint. This may be interesting for processes that caught these signals but do not process them in a reasonable delay. If not set or set to -1 no sigkill will be sent
 
 ##Dependencies
 
@@ -115,7 +115,7 @@ Timeout in seconds that will trigger a sigkill on the process if it's still runn
 
 Processes are run in a container, and will have the PID 1 inside the container. Linux kernel treats PID 1 specially and will block or ignore mosts of the signals (see http://lwn.net/Articles/532748/). This means that, unless the application installs a signal handler, SIGINT and SIGTERM won't be received by the process.
 
-`psdock` overcome this issue by inspecting the signal masks of the process to detect which signals it caught. When `psdock` received a SIGINT or a SIGTERM, it firsts check if its child process will catch it. If it does, it just forward it, otherwise, it will translate the signal to a SIGKILL.
+`psdock` overcome this issue by inspecting the signal masks of the process to detect which signals are caught. When `psdock` received a SIGINT or a SIGTERM, it firsts check if its process will catch it. If it does, it just forward it, otherwise, it will translate the signal to a SIGKILL.
 
 Another solution would be to use the [phusion/baseimage-docker](https://github.com/phusion/baseimage-docker), that launch a proper init system in the container.
 
@@ -125,8 +125,6 @@ Another solution would be to use the [phusion/baseimage-docker](https://github.c
 
 1. you don't specify any stdio and launch `psdock` from a pseudo-tty (terminal, ssh ...)
 2. you specify a "remote location" (for example tcp://localhost:9999 or tls://localhost:422)
-
-It won't be considered interactive if it's launched from another program or if it points to a standard file.
 
 In the first case, we just put the current terminal in raw mode and everything get passed to the tty inside the container (basically this means Ctrl+C and everything else can be used as is).
 

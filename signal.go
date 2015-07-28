@@ -58,7 +58,7 @@ func (h *signalHandler) handleInterupt(sig os.Signal) error {
 		return h.handleDefault(sig)
 	}
 
-	if h.killTimeout > 0 {
+	if h.killTimeout >= 0 {
 		go func() {
 			<-time.After(time.Duration(h.killTimeout) * time.Second)
 			h.forceKilled = true
