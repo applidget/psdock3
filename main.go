@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	containersRoot = "/var/run/psdock"
+	containersRoot = "/run/psdock"
 )
 
 var (
